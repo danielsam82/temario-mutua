@@ -1,3 +1,4 @@
+const storagePrefix = window.STORAGE_PREFIX || 'L4_';
 // Variables Globales
 let db = [];
 let selectedQuestions = [];
@@ -44,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initDB() {
     db = JSON.parse(JSON.stringify(preguntasTemario));
-    const edits = JSON.parse(localStorage.getItem('db_edits')) || {};
+    const edits = JSON.parse(localStorage.getItem(storagePrefix + 'db_edits')) || {};
     db.forEach(q => {
         if(edits[q.id]) {
             q.pregunta = edits[q.id].pregunta;
@@ -108,7 +109,7 @@ function initDashboard() {
 }
 
 function renderCharts() {
-    const history = JSON.parse(localStorage.getItem('testHistory')) || [];
+    const history = JSON.parse(localStorage.getItem(storagePrefix + 'testHistory')) || [];
     document.getElementById('dash-total-tests').textContent = history.length;
     
     if (history.length > 0) {
@@ -245,8 +246,8 @@ function setupEventListeners() {
 
     document.getElementById('btn-clear-history').addEventListener('click', () => {
         if(confirm("¿Seguro que deseas borrar TODO el historial? Se perderán las estadísticas.")) {
-            localStorage.removeItem('testHistory');
-            localStorage.removeItem('failedQuestions');
+            localStorage.removeItem(storagePrefix + 'testHistory');
+            localStorage.removeItem(storagePrefix + 'failedQuestions');
             loadHistory();
         }
     });
@@ -365,7 +366,7 @@ function startTest() {
 }
 
 function startFailedTest() {
-    const fails = JSON.parse(localStorage.getItem('failedQuestions')) || [];
+    const fails = JSON.parse(localStorage.getItem(storagePrefix + 'failedQuestions')) || [];
     if(fails.length === 0) {
         alert("No tienes preguntas falladas acumuladas. ¡Sigue practicando!");
         return;
@@ -391,7 +392,7 @@ function startFailedTest() {
 }
 
 function startRepeatedTestById(id) {
-    let history = JSON.parse(localStorage.getItem('testHistory')) || [];
+    let history = JSON.parse(localStorage.getItem(storagePrefix + 'testHistory')) || [];
     const historyItem = history.find(h => h.id === id);
     if (!historyItem || !historyItem.questions) {
         alert("Este examen es de una versión antigua y no puede repetirse.");
@@ -569,20 +570,20 @@ function finishTest() {
 }
 
 function saveHistory(snapshot, newFailedIds, correctIds) {
-    let history = JSON.parse(localStorage.getItem('testHistory')) || [];
+    let history = JSON.parse(localStorage.getItem(storagePrefix + 'testHistory')) || [];
     history.unshift(snapshot);
     if(history.length > 50) history.pop(); 
-    localStorage.setItem('testHistory', JSON.stringify(history));
+    localStorage.setItem(storagePrefix + 'testHistory', JSON.stringify(history));
 
-    let fails = JSON.parse(localStorage.getItem('failedQuestions')) || [];
+    let fails = JSON.parse(localStorage.getItem(storagePrefix + 'failedQuestions')) || [];
     fails = [...new Set([...fails, ...newFailedIds])];
     fails = fails.filter(fId => !correctIds.includes(fId));
     
-    localStorage.setItem('failedQuestions', JSON.stringify(fails));
+    localStorage.setItem(storagePrefix + 'failedQuestions', JSON.stringify(fails));
 }
 
 function loadHistory() {
-    let history = JSON.parse(localStorage.getItem('testHistory')) || [];
+    let history = JSON.parse(localStorage.getItem(storagePrefix + 'testHistory')) || [];
     const list = document.getElementById('history-list');
     list.innerHTML = '';
     
@@ -608,7 +609,7 @@ function loadHistory() {
         list.innerHTML = '<p style="color:var(--text-muted); text-align:center;">Aún no has realizado ningún test.</p>';
     }
 
-    const fails = JSON.parse(localStorage.getItem('failedQuestions')) || [];
+    const fails = JSON.parse(localStorage.getItem(storagePrefix + 'failedQuestions')) || [];
     const btnFails = document.getElementById('btn-test-failed');
     if (fails.length > 0) {
         btnFails.textContent = `Test Fallos Acumulados (${fails.length})`;
@@ -620,14 +621,14 @@ function loadHistory() {
 
 window.deleteHistoryItem = function(id) {
     if(!confirm("¿Borrar este examen del historial?")) return;
-    let history = JSON.parse(localStorage.getItem('testHistory')) || [];
+    let history = JSON.parse(localStorage.getItem(storagePrefix + 'testHistory')) || [];
     history = history.filter(h => h.id !== id);
-    localStorage.setItem('testHistory', JSON.stringify(history));
+    localStorage.setItem(storagePrefix + 'testHistory', JSON.stringify(history));
     loadHistory();
 };
 
 window.viewHistoryDetail = function(id) {
-    let history = JSON.parse(localStorage.getItem('testHistory')) || [];
+    let history = JSON.parse(localStorage.getItem(storagePrefix + 'testHistory')) || [];
     const item = history.find(h => h.id === id);
     if(!item) return;
     
@@ -661,7 +662,7 @@ function startStudyMode() {
     let pool = [];
     
     if (onlyFailed) {
-        const fails = JSON.parse(localStorage.getItem('failedQuestions')) || [];
+        const fails = JSON.parse(localStorage.getItem(storagePrefix + 'failedQuestions')) || [];
         if (fails.length === 0) {
             alert("¡No tienes preguntas falladas acumuladas para repasar!");
             return;
@@ -816,13 +817,13 @@ function saveEdit() {
         }
     });
     
-    const edits = JSON.parse(localStorage.getItem('db_edits')) || {};
+    const edits = JSON.parse(localStorage.getItem(storagePrefix + 'db_edits')) || {};
     edits[q.id] = {
         pregunta: q.pregunta,
         opciones: q.opciones,
         respuestaCorrecta: q.respuestaCorrecta
     };
-    localStorage.setItem('db_edits', JSON.stringify(edits));
+    localStorage.setItem(storagePrefix + 'db_edits', JSON.stringify(edits));
     
     document.getElementById('edit-modal').classList.add('hidden');
     renderDBList();
@@ -835,10 +836,10 @@ function saveEdit() {
 function exportData() {
     const data = {
         type: 'teoria',
-        t_testHistory: localStorage.getItem('testHistory') || '[]',
-        t_failedQuestions: localStorage.getItem('failedQuestions') || '[]',
+        t_testHistory: localStorage.getItem(storagePrefix + 'testHistory') || '[]',
+        t_failedQuestions: localStorage.getItem(storagePrefix + 'failedQuestions') || '[]',
         t_userName: localStorage.getItem('userName') || 'Estudiante',
-        t_db_edits: localStorage.getItem('db_edits') || '{}'
+        t_db_edits: localStorage.getItem(storagePrefix + 'db_edits') || '{}'
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -867,10 +868,10 @@ function importData(event) {
             }
             
             if (confirm("¡Atención! Esto sobreescribirá todo tu progreso actual de Teoría en este dispositivo con los datos del archivo. ¿Estás seguro?")) {
-                localStorage.setItem('testHistory', data.t_testHistory);
-                localStorage.setItem('failedQuestions', data.t_failedQuestions);
+                localStorage.setItem(storagePrefix + 'testHistory', data.t_testHistory);
+                localStorage.setItem(storagePrefix + 'failedQuestions', data.t_failedQuestions);
                 localStorage.setItem('userName', data.t_userName);
-                localStorage.setItem('db_edits', data.t_db_edits);
+                localStorage.setItem(storagePrefix + 'db_edits', data.t_db_edits);
                 alert("¡Progreso restaurado con éxito! La página se va a recargar.");
                 location.reload();
             }

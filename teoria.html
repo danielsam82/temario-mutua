@@ -13,7 +13,7 @@
 
     <header>
         <div class="header-content">
-            <h1>Test <span>Pro</span> Teoría</h1>
+            <h1>Test Pro <span id="header-level-title">Nivel X</span></h1>
             <nav class="main-nav">
                 <a href="index.html" class="nav-btn" style="text-decoration:none;">🏠 Volver</a>
                 <button id="nav-dashboard" class="nav-btn active">Dashboard</button>
@@ -331,7 +331,14 @@
     </div>
 
     <!-- Scripts -->
-    <script src="datos.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const nivel = urlParams.get('nivel') || '4';
+        window.STORAGE_PREFIX = `L${nivel}_`;
+        window.CURRENT_LEVEL = `Nivel ${nivel}`;
+        document.getElementById('header-level-title').textContent = window.CURRENT_LEVEL;
+        document.write('<script src="datos_nivel' + nivel + '.js"></scr' + 'ipt>');
+    </script>
     <script src="app.js"></script>
 </body>
 </html>

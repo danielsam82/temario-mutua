@@ -83,18 +83,28 @@
         </div>
 
         <div class="hub-cards">
-            <a href="teoria.html" class="hub-card">
+            <div class="hub-card" id="teoria-card">
                 <div class="hub-icon">📚</div>
                 <h3>Parte Teórica</h3>
-                <p>Temario Oficial (6 Temas). Test clásicos, preguntas A-D y modo estudio interactivo.</p>
-                <div class="btn-accent" style="width: 100%; text-align: center; margin-top: 1rem;">Entrar a Teoría</div>
-            </a>
+                <p>Temario Oficial. Test clásicos, preguntas A-D y modo estudio interactivo.</p>
+                <div id="teoria-buttons" style="width: 100%; display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+                    <a href="teoria.html?nivel=4" class="btn-accent" style="text-decoration: none; padding: 0.75rem;">Nivel 4 (6 Temas)</a>
+                    <a href="teoria.html?nivel=5" class="btn-primary" style="text-decoration: none; padding: 0.75rem;">Nivel 5 (Prueba)</a>
+                </div>
+            </div>
 
             <a href="practica.html" class="hub-card">
                 <div class="hub-icon">💻</div>
                 <h3>Parte Práctica</h3>
                 <p>Office 365 y Herramientas. Simulación exacta del entorno Moodle (Relacionar, Verdadero/Falso).</p>
                 <div class="btn-primary" style="width: 100%; text-align: center; margin-top: 1rem;">Entrar a Práctica</div>
+            </a>
+        </div>
+
+        <div style="margin-top: 4rem; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">¿Te ha sido útil esta herramienta?</p>
+            <a href="https://paypal.me/DANIELRUBIOVARGAS" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #0070ba; color: white; padding: 0.75rem 1.5rem; border-radius: 2rem; text-decoration: none; font-weight: 600; transition: transform 0.2s;">
+                ☕ Invítame a un café (PayPal)
             </a>
         </div>
     </div>

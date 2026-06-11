@@ -122,6 +122,20 @@ nav .nav-btn.active {
 }
 .btn-theme:hover { background: var(--secondary); }
 
+.btn-menu {
+    display: none;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: var(--transition);
+}
+.btn-menu:hover { background: var(--secondary); }
+
 /* Main */
 main {
     flex: 1;
@@ -391,19 +405,24 @@ button {
     .stats-overview {
         flex-direction: column;
     }
+    .btn-menu {
+        display: block;
+    }
     .main-nav {
-        justify-content: center;
+        display: none;
+        flex-direction: column;
         width: 100%;
-        margin-top: 0.5rem;
+        margin-top: 1rem;
+    }
+    .main-nav.open {
+        display: flex;
     }
     .header-content {
         flex-direction: column;
-        text-align: center;
+        align-items: flex-start;
     }
     .btn-theme {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
+        position: static;
     }
 }
 

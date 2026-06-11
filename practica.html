@@ -13,17 +13,21 @@
 
     <header>
         <div class="header-content">
-            <h1 class="logo">💻 Práctica Office</h1>
-            <nav class="main-nav">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Test Pro <span>Práctica (O365)</span></h1>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button id="btn-theme" class="btn-theme" title="Alternar Modo Claro/Oscuro">🌓</button>
+                    <button id="btn-menu" class="btn-menu">☰</button>
+                </div>
+            </div>
+            <nav id="main-nav" class="main-nav">
                 <a href="index.html" class="nav-btn" style="text-decoration:none;">🏠 Volver</a>
                 <button id="nav-dashboard" class="nav-btn active">Dashboard</button>
                 <button id="nav-config" class="nav-btn">Hacer Test</button>
-                <button id="nav-study" class="nav-btn">Modo Estudio</button>
                 <button id="nav-history" class="nav-btn">Historial</button>
                 <button id="nav-manager" class="nav-btn">Temario</button>
                 <button id="nav-sync" class="nav-btn">Sincronizar</button>
             </nav>
-            <button id="btn-theme" class="btn-theme" title="Alternar Modo Claro/Oscuro">🌓</button>
         </div>
     </header>
 

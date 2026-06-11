@@ -87,6 +87,15 @@ function initTheme() {
 }
 
 function initDashboard() {
+    // Mobile menu
+    const btnMenu = document.getElementById('btn-menu');
+    const mainNav = document.getElementById('main-nav');
+    if (btnMenu && mainNav) {
+        btnMenu.addEventListener('click', () => {
+            mainNav.classList.toggle('open');
+        });
+    }
+
     const nameEl = document.getElementById('user-name');
     nameEl.textContent = localStorage.getItem('userName') || 'Estudiante';
     nameEl.addEventListener('blur', () => {
@@ -295,7 +304,10 @@ function switchScreen(screenName) {
     Object.keys(navBtns).forEach(k => {
         navBtns[k].classList.toggle('active', k === screenName);
     });
-    
+
+    const mainNav = document.getElementById('main-nav');
+    if (mainNav) mainNav.classList.remove('open');
+
     window.scrollTo(0,0);
 }
 

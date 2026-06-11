@@ -387,11 +387,51 @@ button {
 .edit-opt-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
 .edit-opt-letra { width: 40px; text-align: center; }
 
+@media (max-width: 768px) {
+    .stats-overview {
+        flex-direction: column;
+    }
+    .main-nav {
+        justify-content: center;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    .btn-theme {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+    }
+}
+
 @media (max-width: 600px) {
     main { padding: 1rem; }
-    .header-content { padding: 1rem; }
+    .header-content { padding: 1rem; padding-top: 2rem; }
     .test-footer { flex-direction: column; gap: 1rem; }
-    .btn-secondary, .btn-primary, .btn-accent { width: 100%; }
-    .history-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .btn-secondary, .btn-primary, .btn-accent, .btn-danger { width: 100%; }
+    .history-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
     .hist-score { text-align: left; }
+    .hist-btns { width: 100%; justify-content: space-between; }
+    .card { padding: 1.5rem; }
+    h2 { font-size: 1.3rem; }
+    .stat-val { font-size: 1.5rem; }
+    .chart-bar-wrap { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+    .chart-label { width: 100%; }
+    .chart-track { width: 100%; margin-bottom: 0.5rem; }
+    .toggle-group { flex-direction: column; }
+    
+    .db-item { flex-direction: column; gap: 0.5rem; }
+    .db-item button { width: 100%; margin-top: 0.5rem; }
+    
+    .modal-content { width: 95%; padding: 1.5rem; margin: 1rem; max-height: 95vh; }
+    .modal-actions { flex-direction: column; }
+    .modal-actions button { width: 100%; }
+    
+    .option-btn { font-size: 0.95rem; padding: 0.75rem 1rem 0.75rem 2.5rem; }
+    .option-btn .option-letter { left: 0.75rem; }
+    
+    .hub-title { font-size: 2rem; }
 }

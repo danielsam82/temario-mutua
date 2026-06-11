@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Platform V2 - Temario 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <h1>Test <span>Pro</span> Teoría</h1>
+            <nav class="main-nav">
+                <a href="index.html" class="nav-btn" style="text-decoration:none;">🏠 Volver</a>
+                <button id="nav-dashboard" class="nav-btn active">Dashboard</button>
+                <button id="nav-config" class="nav-btn">Hacer Test</button>
+                <button id="nav-study" class="nav-btn">Modo Estudio</button>
+                <button id="nav-history" class="nav-btn">Historial</button>
+                <button id="nav-manager" class="nav-btn">Temario</button>
+                <button id="nav-sync" class="nav-btn">Sincronizar</button>
+            </nav>
+            <button id="btn-theme" class="btn-theme" title="Alternar Modo Claro/Oscuro">🌓</button>
+        </div>
+    </header>
+
+    <main id="app-container">
+        
+        <!-- PANTALLA DASHBOARD -->
+        <section id="screen-dashboard" class="screen active">
+            <div class="card dashboard-header">
+                <h2>¡Hola, <span id="user-name" class="editable-name" contenteditable="true" title="Haz clic para editar">Estudiante</span>!</h2>
+                <div class="countdown-box">
+                    <p class="exam-date-label">Faltan para el examen (30 Oct):</p>
+                    <div class="countdown-timer" id="countdown">Cargando...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Tu Evolución General</h3>
+                <div class="stats-overview">
+                    <div class="stat-box">
+                        <span class="stat-val" id="dash-total-tests">0</span>
+                        <span class="stat-label">Tests Realizados</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-val" id="dash-avg-score">0%</span>
+                        <span class="stat-label">Nota Media</span>
+                    </div>
+                </div>
+                
+                <h3 class="margin-top">Aciertos por Temario</h3>
+                <div class="charts-container" id="theme-charts">
+                    <!-- Barras generadas en JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- PANTALLA CONFIGURACIÓN -->
+        <section id="screen-config" class="screen">
+            <div class="card config-card">
+                <h2>Configura tu Examen</h2>
+                
+                <div class="config-group">
+                    <label>Modo de vista</label>
+                    <div class="toggle-group">
+                        <label class="radio-label">
+                            <input type="radio" name="view-mode" value="card" checked>
+                            <span>Tarjeta (1 a 1)</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="view-mode" value="list">
+                            <span>Lista Continua</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>Opciones Adicionales</label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="shuffle-questions" checked>
+                        <span>Desordenar Preguntas</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="shuffle-options" checked>
+                        <span>Desordenar Respuestas (A,B,C,D)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="hide-letters">
+                        <span>Ocultar Letras (A,B,C,D) visualmente</span>
+                    </label>
+                </div>
+
+                <div class="config-group">
+                    <label for="num-questions">Número de Preguntas (<span id="num-val">Todas</span>)</label>
+                    <input type="range" id="num-questions" min="5" max="100" step="5" value="100">
+                    <small>Mueve el deslizador a tope a la derecha para hacer 'Todas'</small>
+                </div>
+
+                <div class="config-group">
+                    <label>Selecciona Temas a incluir</label>
+                    <div class="themes-container" id="themes-container">
+                        <!-- Themes injected via JS -->
+                    </div>
+                    <button class="btn-secondary btn-sm" id="btn-toggle-themes">Marcar/Desmarcar Todos</button>
+                </div>
+
+                <button id="btn-start" class="btn-primary btn-large">Comenzar Test Personalizado</button>
+
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.5rem; text-align: center;">
+                    <p class="text-muted" style="margin-bottom: 0.5rem;">¿Prefieres un simulacro directo?</p>
+                    <button id="btn-quick-100" class="btn-accent" style="width: 100%;">Simulacro 100 Preguntas Aleatorias (Todo el Temario)</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANTALLA TEST -->
+        <section id="screen-test" class="screen">
+            <div class="test-header">
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div class="test-meta">
+                    <span id="question-counter">Pregunta 1 de 10</span>
+                </div>
+            </div>
+
+            <div id="questions-container">
+                <!-- Questions injected via JS -->
+            </div>
+
+            <div class="test-footer">
+                <button id="btn-prev" class="btn-secondary hidden">Anterior</button>
+                <button id="btn-next" class="btn-primary hidden">Siguiente</button>
+                <button id="btn-finish" class="btn-accent hidden">Finalizar y Corregir</button>
+            </div>
+        </section>
+
+        <!-- PANTALLA RESULTADOS -->
+        <section id="screen-results" class="screen">
+            <div class="card results-card">
+                <h2>Resultados del Test</h2>
+                <div class="score-circle">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg"
+                        d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle" id="score-circle-path"
+                        stroke-dasharray="0, 100"
+                        d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <text x="18" y="20.35" class="percentage" id="score-text">0%</text>
+                    </svg>
+                </div>
+                <div class="stats">
+                    <div class="stat-box correct">
+                        <span class="stat-val" id="res-correct">0</span>
+                        <span class="stat-label">Correctas</span>
+                    </div>
+                    <div class="stat-box incorrect">
+                        <span class="stat-val" id="res-incorrect">0</span>
+                        <span class="stat-label">Falladas</span>
+                    </div>
+                    <div class="stat-box omitted">
+                        <span class="stat-val" id="res-omitted">0</span>
+                        <span class="stat-label">En Blanco</span>
+                    </div>
+                </div>
+                <div class="results-actions">
+                    <button id="btn-review" class="btn-secondary">Repasar Fallos</button>
+                    <button id="btn-home" class="btn-primary">Ir al Dashboard</button>
+                </div>
+            </div>
+
+            <!-- Review Section -->
+            <div id="review-container" class="hidden">
+                <h3 class="review-title">Revisión de Errores</h3>
+                <div id="review-questions"></div>
+            </div>
+        </section>
+
+        <!-- PANTALLA CONFIGURACIÓN ESTUDIO -->
+        <section id="screen-study-config" class="screen">
+            <div class="card config-card">
+                <h2>Configura tu Modo Estudio</h2>
+                <p class="text-muted" style="margin-bottom: 1.5rem;">Repasa las preguntas a tu ritmo. Te diremos al instante cuál es la correcta sin guardar nota.</p>
+                
+                <div class="config-group">
+                    <label>Filtros de Estudio</label>
+                    <label class="checkbox-label" style="border-left: 4px solid var(--danger);">
+                        <input type="checkbox" id="study-only-failed">
+                        <span>Estudiar SOLO las preguntas que tengo en Fallos Acumulados</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="study-shuffle-options">
+                        <span>Desordenar Respuestas (A,B,C,D)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="study-hide-letters">
+                        <span>Ocultar Letras (A,B,C,D) visualmente</span>
+                    </label>
+                </div>
+
+                <div class="config-group" id="study-themes-group">
+                    <label>Selecciona Temas a repasar</label>
+                    <div class="themes-container" id="study-themes-container">
+                        <!-- Themes injected via JS -->
+                    </div>
+                    <button class="btn-secondary btn-sm" id="btn-toggle-study-themes">Marcar/Desmarcar Todos</button>
+                </div>
+
+                <button id="btn-start-study" class="btn-accent btn-large">Comenzar a Estudiar</button>
+            </div>
+        </section>
+
+        <!-- PANTALLA EJECUCIÓN ESTUDIO -->
+        <section id="screen-study-run" class="screen">
+            <div class="test-header">
+                <div class="progress-bar-container">
+                    <div id="study-progress-bar" class="progress-bar" style="background: var(--accent);"></div>
+                </div>
+                <div class="test-meta">
+                    <span id="study-question-counter"></span>
+                </div>
+                <p class="text-muted" style="text-align: center; margin-top: 1rem; font-size: 0.85rem;">Las respuestas correctas se iluminarán automáticamente a medida que vayas haciendo scroll.</p>
+            </div>
+
+            <div id="study-questions-container">
+                <!-- Question injected via JS -->
+            </div>
+
+            <div class="test-footer" style="justify-content: flex-end;">
+                <button id="btn-study-finish" class="btn-secondary">Terminar Sesión</button>
+            </div>
+        </section>
+
+        <!-- PANTALLA HISTORIAL -->
+        <section id="screen-history" class="screen">
+            <div class="card history-card">
+                <h2>Historial de Exámenes</h2>
+                
+                <div class="history-actions">
+                    <button id="btn-clear-history" class="btn-danger btn-sm">Borrar TODO el Historial</button>
+                    <button id="btn-test-failed" class="btn-accent btn-sm">Test de Fallos Acumulados</button>
+                </div>
+
+                <div class="history-list" id="history-list">
+                    <!-- History injected via JS -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- PANTALLA REVISIÓN DETALLE HISTORIAL -->
+        <section id="screen-history-detail" class="screen">
+            <div class="card">
+                <div class="detail-header">
+                    <h2>Detalle del Examen</h2>
+                    <button id="btn-back-history" class="btn-secondary btn-sm">Volver al Historial</button>
+                </div>
+                <p id="detail-meta" class="text-muted"></p>
+                <div class="results-actions" style="margin: 1rem 0;">
+                    <button id="btn-repeat-exam" class="btn-accent">Repetir Exactamente Igual</button>
+                </div>
+                <div id="detail-questions"></div>
+            </div>
+        </section>
+
+        <!-- PANTALLA TEMARIO / GESTOR DB -->
+        <section id="screen-manager" class="screen">
+            <div class="card">
+                <h2>Base de Datos / Temario</h2>
+                <p class="text-muted">Busca, comprueba y corrige posibles erratas. Los cambios se guardan localmente.</p>
+                <input type="text" id="search-db" class="input-text" placeholder="Buscar preguntas...">
+                <div class="db-list" id="db-list">
+                    <!-- Questions injected via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- PANTALLA SINCRONIZACIÓN -->
+        <section id="screen-sync" class="screen">
+            <div class="card">
+                <h2>Sincronización de Progreso</h2>
+                <div style="background: rgba(139, 92, 246, 0.1); border-left: 4px solid var(--accent); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent); margin-top: 0;">¿Por qué mi progreso no aparece en mi móvil?</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.5rem;">
+                        Por privacidad y para que la web funcione rapidísimo (incluso sin internet), tus notas, fallos y ediciones <strong>se guardan de forma física en la memoria de este dispositivo</strong> (no en la nube de una empresa).
+                    </p>
+                    <p style="font-size: 0.95rem; line-height: 1.5; margin-bottom: 0;">
+                        Si quieres continuar estudiando en tu móvil (o viceversa) sin perder tus estadísticas, solo tienes que seguir estos dos pasos:
+                        <br>1. Haz clic en <strong>Exportar</strong> y envíate el archivo resultante por WhatsApp o Email.
+                        <br>2. Abre esta web en tu otro dispositivo, haz clic en <strong>Importar</strong> y selecciona ese archivo.
+                    </p>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+                    <button id="btn-export-data" class="btn-primary btn-large">📤 Exportar mis datos (Descargar Backup)</button>
+                    <button id="btn-import-data" class="btn-secondary btn-large">📥 Importar datos (Cargar Backup)</button>
+                    <input type="file" id="file-import" style="display: none;" accept=".json">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL EDICIÓN PREGUNTA -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content card">
+            <h3>Editar Pregunta</h3>
+            <label>Pregunta:</label>
+            <textarea id="edit-q-text" class="input-text" rows="3"></textarea>
+            
+            <label>Opciones:</label>
+            <div id="edit-q-options"></div>
+            
+            <label>Respuesta Correcta (letra):</label>
+            <input type="text" id="edit-q-correct" class="input-text" maxlength="1" style="width: 50px;">
+            
+            <div class="modal-actions">
+                <button id="btn-save-edit" class="btn-primary">Guardar</button>
+                <button id="btn-cancel-edit" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="datos.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

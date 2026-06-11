@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Pro 2026 - Hub Principal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .hub-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            gap: 2rem;
+            text-align: center;
+            padding: 2rem;
+        }
+        .hub-title {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent), #4568dc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        .hub-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+        }
+        .hub-cards {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        .hub-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 300px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        .hub-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        .hub-card h3 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .hub-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .hub-icon {
+            font-size: 3rem;
+        }
+        .btn-theme-hub {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <button id="btn-theme" class="btn-theme-hub" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text);">🌓</button>
+
+    <div class="hub-container">
+        <div>
+            <h1 class="hub-title">Oposición 2026</h1>
+            <p class="hub-subtitle">Bienvenido a la plataforma central de estudio. Selecciona el módulo en el que deseas entrenar hoy.</p>
+        </div>
+
+        <div class="hub-cards">
+            <a href="teoria.html" class="hub-card">
+                <div class="hub-icon">📚</div>
+                <h3>Parte Teórica</h3>
+                <p>Temario Oficial (6 Temas). Test clásicos, preguntas A-D y modo estudio interactivo.</p>
+                <div class="btn-accent" style="width: 100%; text-align: center; margin-top: 1rem;">Entrar a Teoría</div>
+            </a>
+
+            <a href="practica.html" class="hub-card">
+                <div class="hub-icon">💻</div>
+                <h3>Parte Práctica</h3>
+                <p>Office 365 y Herramientas. Simulación exacta del entorno Moodle (Relacionar, Verdadero/Falso).</p>
+                <div class="btn-primary" style="width: 100%; text-align: center; margin-top: 1rem;">Entrar a Práctica</div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Simple theme toggle for hub
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.getElementById('btn-theme').addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        });
+    </script>
+</body>
+</html>

@@ -207,12 +207,12 @@ function updateQuestionSlider() {
 }
 
 function setupEventListeners() {
-    navBtns.dashboard.addEventListener('click', () => { initDashboard(); switchScreen('dashboard'); });
-    navBtns.config.addEventListener('click', () => switchScreen('config'));
-    navBtns.study.addEventListener('click', () => switchScreen('studyConfig'));
-    navBtns.history.addEventListener('click', () => { loadHistory(); switchScreen('history'); });
-    navBtns.manager.addEventListener('click', () => { renderDBList(); switchScreen('manager'); });
-    navBtns.sync.addEventListener('click', () => switchScreen('sync'));
+    if(navBtns.dashboard) navBtns.dashboard.addEventListener('click', () => { initDashboard(); switchScreen('dashboard'); });
+    if(navBtns.config) navBtns.config.addEventListener('click', () => switchScreen('config'));
+    if(navBtns.study) navBtns.study.addEventListener('click', () => switchScreen('studyConfig'));
+    if(navBtns.history) navBtns.history.addEventListener('click', () => { loadHistory(); switchScreen('history'); });
+    if(navBtns.manager) navBtns.manager.addEventListener('click', () => { renderDBList(); switchScreen('manager'); });
+    if(navBtns.sync) navBtns.sync.addEventListener('click', () => switchScreen('sync'));
 
     const range = document.getElementById('num-questions');
     const rangeVal = document.getElementById('num-val');

@@ -40,7 +40,7 @@ function initApp() {
     initDashboard();
     loadThemes();
     setupEventListeners();
-    updateCharts();
+    renderCharts();
     switchScreen('dashboard');
 }
 

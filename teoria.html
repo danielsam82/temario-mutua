@@ -342,8 +342,15 @@
         window.STORAGE_PREFIX = `L${nivel}_`;
         window.CURRENT_LEVEL = `Nivel ${nivel}`;
         document.getElementById('header-level-title').textContent = window.CURRENT_LEVEL;
-        document.write('<script src="datos_nivel' + nivel + '.js"></scr' + 'ipt>');
+        
+        const dataScript = document.createElement('script');
+        dataScript.src = `datos_nivel${nivel}.js`;
+        dataScript.onload = () => {
+            const appScript = document.createElement('script');
+            appScript.src = 'app.js';
+            document.body.appendChild(appScript);
+        };
+        document.body.appendChild(dataScript);
     </script>
-    <script src="app.js"></script>
 </body>
 </html>

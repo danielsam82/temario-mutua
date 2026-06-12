@@ -34,14 +34,21 @@ const navBtns = {
     sync: document.getElementById('nav-sync')
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
     initDB();
     initTheme();
     initDashboard();
     loadThemes();
     setupEventListeners();
+    updateCharts();
     switchScreen('dashboard');
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 function initDB() {
     db = JSON.parse(JSON.stringify(preguntasTemario));

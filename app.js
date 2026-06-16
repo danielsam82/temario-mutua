@@ -473,9 +473,14 @@ function renderTest() {
 }
 
 function updateProgress() {
-    document.getElementById('question-counter').textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
-    const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
-    document.getElementById('progress-bar').style.width = pct + '%';
+    const counter = document.getElementById('question-counter');
+    if (counter) counter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
+    
+    const bar = document.getElementById('progress-bar');
+    if (bar) {
+        const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
+        bar.style.width = pct + '%';
+    }
     
     const floating = document.getElementById('test-floating-progress');
     if (floating) {

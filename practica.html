@@ -24,6 +24,7 @@
                 <a href="index.html" class="nav-btn" style="text-decoration:none;">🏠 Volver</a>
                 <button id="nav-dashboard" class="nav-btn active">Dashboard</button>
                 <button id="nav-config" class="nav-btn">Hacer Test</button>
+                <button id="nav-study" class="nav-btn">Modo Estudio</button>
                 <button id="nav-history" class="nav-btn">Historial</button>
                 <button id="nav-manager" class="nav-btn">Temario</button>
                 <button id="nav-sync" class="nav-btn">Sincronizar</button>
@@ -124,7 +125,7 @@
         </section>
 
         <!-- PANTALLA TEST -->
-        <section id="screen-test" class="screen hidden">
+        <section id="screen-test" class="screen">
             <div class="test-header">
                 <div class="progress-bar-container">
                     <div id="progress-bar" class="progress-bar"></div>
@@ -316,6 +317,63 @@
 
     </main>
 
+        <!-- PANTALLA CONFIGURACIÓN ESTUDIO -->
+        <section id="screen-study-config" class="screen">
+            <div class="card config-card">
+                <h2>Configura tu Modo Estudio</h2>
+                <p class="text-muted" style="margin-bottom: 1.5rem;">Repasa las preguntas prácticas a tu ritmo. Te diremos al instante cuál es la correcta sin guardar nota.</p>
+                
+                <div class="config-group">
+                    <label>Filtros de Estudio</label>
+                    <label class="checkbox-label" style="border-left: 4px solid var(--danger);">
+                        <input type="checkbox" id="study-only-failed">
+                        <span>Estudiar SOLO las preguntas que tengo en Fallos Acumulados</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="study-shuffle-options">
+                        <span>Desordenar Respuestas (A,B,C,D)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="study-hide-letters">
+                        <span>Ocultar Letras (A,B,C,D) visualmente</span>
+                    </label>
+                </div>
+
+                <div class="config-group" id="study-themes-group">
+                    <label>Selecciona Temas a repasar</label>
+                    <div class="themes-container" id="study-themes-container">
+                        <!-- Themes injected via JS -->
+                    </div>
+                    <button class="btn-secondary btn-sm" id="btn-toggle-study-themes">Marcar/Desmarcar Todos</button>
+                </div>
+
+                <button id="btn-start-study" class="btn-accent btn-large">Comenzar a Estudiar</button>
+            </div>
+        </section>
+
+        <!-- PANTALLA EJECUCIÓN ESTUDIO -->
+        <section id="screen-study-run" class="screen">
+            <div class="test-header">
+                <div class="progress-bar-container">
+                    <div id="study-progress-bar" class="progress-bar" style="background: var(--accent);"></div>
+                </div>
+                <div class="test-meta">
+                    <span id="study-question-counter"></span>
+                </div>
+                <p class="text-muted" style="text-align: center; margin-top: 1rem; font-size: 0.85rem;">Las respuestas correctas se iluminarán automáticamente a medida que vayas haciendo scroll.</p>
+            </div>
+
+            <div id="study-questions-container">
+                <!-- Question injected via JS -->
+            </div>
+
+            <div class="test-footer" style="justify-content: flex-end;">
+                <button id="btn-study-finish" class="btn-secondary">Terminar Sesión</button>
+            </div>
+        </section>
+
+    </main>
+
     <!-- MODAL EDICIÓN PREGUNTA -->
     <div id="edit-modal" class="modal hidden">
         <div class="modal-content card">
@@ -337,7 +395,15 @@
     </div>
 
     <!-- Scripts -->
-    <script src="datos_practica.js"></script>
-    <script src="app_practica.js"></script>
+    <script>
+        window.addEventListener('error', function(event) {
+            alert('JS Error: ' + event.message + '\nLine: ' + event.lineno + '\nFile: ' + event.filename);
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            alert('Promise Rejection: ' + event.reason);
+        });
+    </script>
+    <script src="datos_practica.js?v=2"></script>
+    <script src="app_practica.js?v=4"></script>
 </body>
 </html>

@@ -487,9 +487,14 @@ function renderTest() {
 }
 
 function updateProgress() {
-    document.getElementById('question-counter').textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
-    const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
-    document.getElementById('progress-bar').style.width = pct + '%';
+    const counter = document.getElementById('question-counter');
+    if (counter) counter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
+    
+    const bar = document.getElementById('progress-bar');
+    if (bar) {
+        const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
+        bar.style.width = pct + '%';
+    }
 
     const floating = document.getElementById('test-floating-progress');
     if (floating) {
@@ -497,6 +502,7 @@ function updateProgress() {
         floating.classList.remove('hidden');
     }
 }
+
 function createQuestionCard(q, index, isReview, passedUserAns) {
     const card = document.createElement('div');
     card.className = 'question-card';
@@ -862,6 +868,50 @@ function startStudyMode() {
     renderStudyList();
 }
 
+function highlightDifferences(options, correctLetter) {
+    if (!options || options.length < 2) return options;
+    
+    const tokenized = options.map(o => o.texto.split(/(\s+)/));
+    const tokenCounts = {};
+    const totalOpts = tokenized.length;
+
+    tokenized.forEach(tokens => {
+        const uniqueTokens = new Set(tokens.filter(t => t.trim().length > 0).map(t => t.toLowerCase()));
+        uniqueTokens.forEach(t => {
+            tokenCounts[t] = (tokenCounts[t] || 0) + 1;
+        });
+    });
+
+    const isFrequent = (token) => {
+        const count = tokenCounts[token.toLowerCase()];
+        return count >= 2 || count === totalOpts;
+    };
+
+    return options.map((opt, idx) => {
+        const isCorrect = (opt.letra === correctLetter);
+        const tokens = tokenized[idx];
+        
+        const newTexto = tokens.map(t => {
+            if (t.trim().length === 0) return t; 
+            
+            if (isFrequent(t)) {
+                return t;
+            } else {
+                if (isCorrect) {
+                    return `<span class="nemo-correct">${t}</span>`;
+                } else {
+                    return `<span class="nemo-incorrect">${t}</span>`;
+                }
+            }
+        }).join('');
+
+        return {
+            ...opt,
+            texto: newTexto
+        };
+    });
+}
+
 function renderStudyList() {
     const container = document.getElementById('study-questions-container');
     container.innerHTML = '';
@@ -869,6 +919,14 @@ function renderStudyList() {
     document.getElementById('study-question-counter').textContent = `${studyQuestions.length} Preguntas en Estudio`;
     document.getElementById('study-progress-bar').style.width = '100%';
     
+    const floatingProgress = document.getElementById('study-floating-progress');
+    if (floatingProgress) {
+        floatingProgress.classList.remove('hidden');
+        floatingProgress.textContent = `Vistas: 0 / ${studyQuestions.length} (0%)`;
+    }
+    let cardsViewed = 0;
+    const totalCards = studyQuestions.length;
+
     studyQuestions.forEach((q, index) => {
         const card = document.createElement('div');
         card.className = 'question-card study-auto-reveal';
@@ -901,17 +959,19 @@ function renderStudyList() {
             });
             html += `</div>`;
         } else {
-            const opts = q.opciones || q.shuffledOpts;
+            let opts = q.opciones || q.shuffledOpts;
             const correct = q.respuestaCorrecta || q.correctAns;
+            
+            opts = highlightDifferences(opts, correct);
             
             opts.forEach(opt => {
                 let isCorrect = false;
                 if (q.tipo === 'multi') {
                     isCorrect = correct && correct.includes(opt.letra);
+
                 } else {
                     isCorrect = correct === opt.letra;
                 }
-                
                 let prefix = (q.tipo === 'vf') ? '' : `<span class="option-letter">${opt.letra.toUpperCase()})</span> `;
                 html += `<button class="option-btn" disabled data-is-correct="${isCorrect}">
                             ${prefix}${opt.texto}
@@ -930,10 +990,16 @@ function renderStudyList() {
             if (entry.isIntersecting) {
                 // Para V/F y Test
                 const correctBtn = entry.target.querySelector('.option-btn[data-is-correct="true"]');
-                if (correctBtn) {
+                if (correctBtn && !correctBtn.classList.contains('correct')) {
                     correctBtn.classList.add('correct');
                     correctBtn.style.transform = 'scale(1.02)';
                     correctBtn.style.transition = 'all 0.5s ease';
+                    
+                    cardsViewed++;
+                    if (floatingProgress) {
+                        const pct = Math.round((cardsViewed / totalCards) * 100);
+                        floatingProgress.textContent = `Vistas: ${cardsViewed} / ${totalCards} (${pct}%)`;
+                    }
                 }
                 
                 // Para Relacionar
@@ -942,13 +1008,21 @@ function renderStudyList() {
                     box.style.color = 'var(--text)';
                     box.style.borderColor = 'var(--success)';
                     box.style.background = 'rgba(40, 167, 69, 0.1)';
+                    if (box.dataset.revealed !== 'true') {
+                        box.dataset.revealed = 'true';
+                        cardsViewed++;
+                        if (floatingProgress) {
+                            const pct = Math.round((cardsViewed / totalCards) * 100);
+                            floatingProgress.textContent = `Vistas: ${cardsViewed} / ${totalCards} (${pct}%)`;
+                        }
+                    }
                 });
                 
                 observer.unobserve(entry.target);
             }
         });
     }, {
-        threshold: 0.5 // Se enciende cuando el 50% de la tarjeta es visible
+        threshold: 0.1
     });
 
     document.querySelectorAll('.study-auto-reveal').forEach(card => {

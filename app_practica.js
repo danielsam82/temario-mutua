@@ -305,6 +305,8 @@ function switchScreen(screenName) {
         navBtns[k].classList.toggle('active', k === screenName);
     });
 
+    document.querySelectorAll('.floating-progress').forEach(el => el.classList.add('hidden'));
+
     const mainNav = document.getElementById('main-nav');
     if (mainNav) mainNav.classList.remove('open');
 
@@ -488,14 +490,20 @@ function updateProgress() {
     document.getElementById('question-counter').textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
     const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
     document.getElementById('progress-bar').style.width = pct + '%';
-}
 
+    const floating = document.getElementById('test-floating-progress');
+    if (floating) {
+        floating.textContent = `${currentQuestionIndex + 1} / ${selectedQuestions.length} (${Math.round((currentQuestionIndex + 1) / selectedQuestions.length * 100)}%)`;
+        floating.classList.remove('hidden');
+    }
+}
 function createQuestionCard(q, index, isReview, passedUserAns) {
     const card = document.createElement('div');
     card.className = 'question-card';
     
+    const cleanPregunta = q.pregunta.replace(/[\u00A0\s]+/g, ' ').trim().replace(/^\d+\.\s*/, '');
     let html = `<span class="question-topic">${q.tema}</span>`;
-    html += `<div class="question-text">${index + 1}. ${q.pregunta.replace(/^\d+\.\s*/, '')}</div>`;
+    html += `<div class="question-text">${index + 1}. ${cleanPregunta}</div>`;
     
     if (q.imagen) {
         html += `<div style="text-align:center; margin: 1rem 0;">
@@ -589,9 +597,9 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
                 }
 
                 let prefix = (q.tipo === 'vf') ? '' : `<span class="option-letter">${opt.letra.toUpperCase()})</span> `;
-
+                const cleanTexto = opt.texto.replace(/[\u00A0\s]+/g, ' ').trim();
                 html += `<button class="${btnClass}" onclick="selectOption(${q.id}, '${opt.letra}', '${q.tipo}')" ${disabled}>
-                            ${prefix}${opt.texto}
+                            ${prefix}${cleanTexto}
                          </button>`;
             });
         }

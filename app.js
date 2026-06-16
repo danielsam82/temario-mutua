@@ -312,6 +312,8 @@ function switchScreen(screenName) {
     Object.keys(navBtns).forEach(k => {
         navBtns[k].classList.toggle('active', k === screenName);
     });
+
+    document.querySelectorAll('.floating-progress').forEach(el => el.classList.add('hidden'));
     
     const mainNav = document.getElementById('main-nav');
     if (mainNav) mainNav.classList.remove('open');
@@ -474,14 +476,21 @@ function updateProgress() {
     document.getElementById('question-counter').textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
     const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
     document.getElementById('progress-bar').style.width = pct + '%';
+    
+    const floating = document.getElementById('test-floating-progress');
+    if (floating) {
+        floating.textContent = `${currentQuestionIndex + 1} / ${selectedQuestions.length} (${Math.round((currentQuestionIndex + 1) / selectedQuestions.length * 100)}%)`;
+        floating.classList.remove('hidden');
+    }
 }
 
 function createQuestionCard(q, index, isReview, passedUserAns) {
     const card = document.createElement('div');
     card.className = 'question-card';
     
+    const cleanPregunta = q.pregunta.replace(/[\u00A0\s]+/g, ' ').trim().replace(/^\d+\.\s*/, '');
     let html = `<span class="question-topic">${q.tema}</span>`;
-    html += `<div class="question-text">${index + 1}. ${q.pregunta.replace(/^\d+\.\s*/, '')}</div>`;
+    html += `<div class="question-text">${index + 1}. ${cleanPregunta}</div>`;
     html += `<div class="options-container">`;
     
     const ansToUse = isReview && passedUserAns !== undefined ? passedUserAns : userAnswers[q.id];
@@ -502,8 +511,9 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
             btnClass += ' selected';
         }
 
+        const cleanTexto = opt.texto.replace(/[\u00A0\s]+/g, ' ').trim();
         html += `<button class="${btnClass}" onclick="selectOption(${q.id}, '${opt.letra}')" ${disabled}>
-                    <span class="option-letter">${opt.letra.toUpperCase()})</span> ${opt.texto}
+                    <span class="option-letter">${opt.letra.toUpperCase()})</span> ${cleanTexto}
                  </button>`;
     });
     
@@ -706,6 +716,48 @@ function startStudyMode() {
     renderStudyList();
 }
 
+function highlightDifferences(options, correctLetter) {
+    if (options.length < 2) return options;
+    
+    const correctOpt = options.find(o => o.letra === correctLetter);
+    if (!correctOpt) return options;
+    
+    const normalize = w => w.toLowerCase().replace(/[.,;:()]/g, '');
+    const correctWords = correctOpt.texto.replace(/[\u00A0\s]+/g, ' ').trim().split(' ');
+    const correctSet = new Set(correctWords.map(normalize));
+    
+    const incorrectOptions = options.filter(o => o.letra !== correctLetter);
+    const incorrectSets = incorrectOptions.map(o => 
+        new Set(o.texto.replace(/[\u00A0\s]+/g, ' ').trim().split(' ').map(normalize))
+    );
+    
+    return options.map(opt => {
+        const words = opt.texto.replace(/[\u00A0\s]+/g, ' ').trim().split(' ');
+        
+        if (opt.letra === correctLetter) {
+            const highlighted = words.map(w => {
+                const nw = normalize(w);
+                // Evitamos resaltar conectores básicos de 1 letra
+                const missingInSomeTrap = incorrectSets.some(set => !set.has(nw));
+                if (missingInSomeTrap && nw.length > 1) {
+                    return `<span class="nemo-correct">${w}</span>`;
+                }
+                return w;
+            });
+            return { ...opt, texto: `<span class="nemo-correct-base">${highlighted.join(' ')}</span>` };
+        } else {
+            const highlighted = words.map(w => {
+                const nw = normalize(w);
+                if (!correctSet.has(nw) && nw.length > 1) {
+                    return `<span class="nemo-incorrect">${w}</span>`;
+                }
+                return w;
+            });
+            return { ...opt, texto: highlighted.join(' ') };
+        }
+    });
+}
+
 function renderStudyList() {
     const container = document.getElementById('study-questions-container');
     container.innerHTML = '';
@@ -713,17 +765,26 @@ function renderStudyList() {
     document.getElementById('study-question-counter').textContent = `${studyQuestions.length} Preguntas en Estudio`;
     document.getElementById('study-progress-bar').style.width = '100%';
     
+    const floatingProgress = document.getElementById('study-floating-progress');
+    floatingProgress.classList.remove('hidden');
+    let cardsViewed = 0;
+    const totalCards = studyQuestions.length;
+    floatingProgress.textContent = `Vistas: 0 / ${totalCards} (0%)`;
+    
     studyQuestions.forEach((q, index) => {
         const card = document.createElement('div');
         card.className = 'question-card study-auto-reveal';
         card.style.border = '2px solid var(--accent)';
         
+        const cleanPregunta = q.pregunta.replace(/[\u00A0\s]+/g, ' ').trim().replace(/^\d+\.\s*/, '');
         let html = `<span class="question-topic">${q.tema}</span>`;
-        html += `<div class="question-text">${index + 1}. ${q.pregunta.replace(/^\d+\.\s*/, '')}</div>`;
+        html += `<div class="question-text">${index + 1}. ${cleanPregunta}</div>`;
         html += `<div class="options-container" id="study-options">`;
         
-        const opts = q.opciones || q.shuffledOpts;
+        let opts = q.opciones || q.shuffledOpts;
         const correct = q.respuestaCorrecta || q.correctAns;
+        
+        opts = highlightDifferences(opts, correct);
         
         opts.forEach(opt => {
             const isCorrect = correct === opt.letra;
@@ -736,21 +797,24 @@ function renderStudyList() {
         container.appendChild(card);
     });
 
-    // Intersection Observer para revelar automáticamente
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const correctBtn = entry.target.querySelector('.option-btn[data-is-correct="true"]');
-                if (correctBtn) {
+                if (correctBtn && !correctBtn.classList.contains('correct')) {
                     correctBtn.classList.add('correct');
                     correctBtn.style.transform = 'scale(1.02)';
                     correctBtn.style.transition = 'all 0.5s ease';
+                    
+                    cardsViewed++;
+                    const pct = Math.round((cardsViewed / totalCards) * 100);
+                    floatingProgress.textContent = `Vistas: ${cardsViewed} / ${totalCards} (${pct}%)`;
                 }
                 observer.unobserve(entry.target);
             }
         });
     }, {
-        threshold: 0.5 // Se enciende cuando el 50% de la tarjeta es visible
+        threshold: 0.1
     });
 
     document.querySelectorAll('.study-auto-reveal').forEach(card => {

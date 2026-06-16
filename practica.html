@@ -31,8 +31,10 @@
         </div>
     </header>
 
-    <main id="app-container">
-        
+    <main class="main-content">
+        <!-- FLOTANTES GLOBALES -->
+        <div id="test-floating-progress" class="floating-progress hidden"></div>
+
         <!-- PANTALLA DASHBOARD -->
         <section id="screen-dashboard" class="screen active">
             <div class="card dashboard-header">
@@ -100,7 +102,7 @@
 
                 <div class="config-group">
                     <label for="num-questions">Número de Preguntas (<span id="num-val">Todas</span>)</label>
-                    <input type="range" id="num-questions" min="5" max="100" step="5" value="100">
+                    <input type="range" id="num-questions" min="1" max="100" value="100">
                     <small>Mueve el deslizador a tope a la derecha para hacer 'Todas'</small>
                 </div>
 
@@ -122,7 +124,7 @@
         </section>
 
         <!-- PANTALLA TEST -->
-        <section id="screen-test" class="screen">
+        <section id="screen-test" class="screen hidden">
             <div class="test-header">
                 <div class="progress-bar-container">
                     <div id="progress-bar" class="progress-bar"></div>

@@ -206,6 +206,10 @@
                         <span>Estudiar SOLO las preguntas que tengo en Fallos Acumulados</span>
                     </label>
                     <label class="checkbox-label">
+                        <input type="checkbox" id="study-original-order">
+                        <span>Mantener Orden Original de Preguntas</span>
+                    </label>
+                    <label class="checkbox-label">
                         <input type="checkbox" id="study-shuffle-options">
                         <span>Desordenar Respuestas (A,B,C,D)</span>
                     </label>
@@ -317,39 +321,7 @@
 
     </main>
 
-        <!-- PANTALLA CONFIGURACIÓN ESTUDIO -->
-        <section id="screen-study-config" class="screen">
-            <div class="card config-card">
-                <h2>Configura tu Modo Estudio</h2>
-                <p class="text-muted" style="margin-bottom: 1.5rem;">Repasa las preguntas prácticas a tu ritmo. Te diremos al instante cuál es la correcta sin guardar nota.</p>
-                
-                <div class="config-group">
-                    <label>Filtros de Estudio</label>
-                    <label class="checkbox-label" style="border-left: 4px solid var(--danger);">
-                        <input type="checkbox" id="study-only-failed">
-                        <span>Estudiar SOLO las preguntas que tengo en Fallos Acumulados</span>
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="study-shuffle-options">
-                        <span>Desordenar Respuestas (A,B,C,D)</span>
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="study-hide-letters">
-                        <span>Ocultar Letras (A,B,C,D) visualmente</span>
-                    </label>
-                </div>
 
-                <div class="config-group" id="study-themes-group">
-                    <label>Selecciona Temas a repasar</label>
-                    <div class="themes-container" id="study-themes-container">
-                        <!-- Themes injected via JS -->
-                    </div>
-                    <button class="btn-secondary btn-sm" id="btn-toggle-study-themes">Marcar/Desmarcar Todos</button>
-                </div>
-
-                <button id="btn-start-study" class="btn-accent btn-large">Comenzar a Estudiar</button>
-            </div>
-        </section>
 
         <!-- PANTALLA EJECUCIÓN ESTUDIO -->
         <section id="screen-study-run" class="screen">

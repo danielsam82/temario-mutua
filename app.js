@@ -446,8 +446,7 @@ function renderTest() {
     container.innerHTML = '';
 
     if (isListMode) {
-        document.getElementById('question-counter').textContent = `${selectedQuestions.length} Preguntas`;
-        document.getElementById('progress-bar').style.width = '100%';
+        updateProgress();
         
         selectedQuestions.forEach((q, idx) => {
             container.appendChild(createQuestionCard(q, idx, false));
@@ -474,18 +473,29 @@ function renderTest() {
 
 function updateProgress() {
     const counter = document.getElementById('question-counter');
-    if (counter) counter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
-    
     const bar = document.getElementById('progress-bar');
-    if (bar) {
-        const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
-        bar.style.width = pct + '%';
-    }
-    
     const floating = document.getElementById('test-floating-progress');
-    if (floating) {
-        floating.textContent = `${currentQuestionIndex + 1} / ${selectedQuestions.length} (${Math.round((currentQuestionIndex + 1) / selectedQuestions.length * 100)}%)`;
-        floating.classList.remove('hidden');
+
+    if (isListMode) {
+        const answeredCount = Object.keys(userAnswers).length;
+        const pct = (answeredCount / selectedQuestions.length) * 100;
+        
+        if (counter) counter.textContent = `${selectedQuestions.length} Preguntas`;
+        if (bar) bar.style.width = pct + '%';
+        if (floating) {
+            floating.textContent = `Respuestas: ${answeredCount} / ${selectedQuestions.length} (${Math.round(pct)}%)`;
+            floating.classList.remove('hidden');
+        }
+    } else {
+        if (counter) counter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
+        if (bar) {
+            const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
+            bar.style.width = pct + '%';
+        }
+        if (floating) {
+            floating.textContent = `${currentQuestionIndex + 1} / ${selectedQuestions.length} (${Math.round((currentQuestionIndex + 1) / selectedQuestions.length * 100)}%)`;
+            floating.classList.remove('hidden');
+        }
     }
 }
 
@@ -712,8 +722,10 @@ function startStudyMode() {
         return;
     }
 
-    // Siempre barajamos las preguntas para que no salgan en el mismo orden de lectura del temario
-    pool = buildTest(pool, true, doShuffleO);
+    const originalOrder = document.getElementById('study-original-order').checked;
+
+    // Barajamos las preguntas salvo que el usuario haya marcado mantener orden original
+    pool = buildTest(pool, !originalOrder, doShuffleO);
     
     studyQuestions = pool;
     

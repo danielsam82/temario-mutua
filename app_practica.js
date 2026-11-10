@@ -6,6 +6,7 @@ let userAnswers = {};
 let isListMode = false;
 let currentExamConfig = null; 
 let currentEditId = null;
+let autoAdvanceTimer = null;
 
 // Study Mode Variables
 let studyQuestions = [];
@@ -33,14 +34,92 @@ const navBtns = {
     sync: document.getElementById('nav-sync')
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
     initDB();
     initTheme();
     initDashboard();
     loadThemes();
     setupEventListeners();
     switchScreen('dashboard');
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+
+// Limpia el enunciado de frases repetitivas de Moodle y devuelve un badge claro + enunciado limpio
+function parsePracticaQuestion(q) {
+    let raw = (q.pregunta || '').replace(/^\d+\.\s*/, '').trim();
+    let badge = '🎯 Opción Única';
+    let instruction = '';
+
+    if (q.tipo === 'vf') {
+        badge = '⚡ Verdadero / Falso';
+    } else if (q.tipo === 'multi') {
+        const numCorrect = Array.isArray(q.respuestaCorrecta || q.correctAns) ? (q.respuestaCorrecta || q.correctAns).length : '';
+        badge = numCorrect ? `☑️ Elige ${numCorrect} opciones` : '☑️ Respuesta Múltiple';
+    } else if (q.tipo === 'relacionar') {
+        badge = (q.pares && q.pares.length === 1) ? '🔽 Completar frase' : '🔗 Relacionar pares';
+    }
+
+    // Frases genéricas de Moodle que ensucian la lectura rápida
+    const boilerplatePatterns = [
+        /^De la siguiente afirmación[.,\s]*selecciona si es verdadera o falsa\.?\s*/i,
+        /^De la siguiente afirmación[.,\s]*Presiona sobre Verdadero o Falso\.?\s*/i,
+        /^Indica si la siguiente afirmación es verdadera o falsa\.?\s*/i,
+        /^Completa la siguiente afirmación\.?\s*/i,
+        /\s*En cada desplegable, elige la opción que consideres correcta\.?\s*/gi,
+        /\s*En el desplegable, elige la opción que consideres correcta\.?\s*/gi,
+        /\s*Selecciona la opción que consideres correcta\.?\s*/gi,
+        /\s*Selecciona las \w+ opciones que consideres correctas\.?\s*/gi,
+        /\s*Seleccione una o más de una:?\s*/gi,
+        /\s*Seleccione una:?\s*/gi
+    ];
+
+    let cleaned = raw;
+    boilerplatePatterns.forEach(regex => {
+        cleaned = cleaned.replace(regex, ' ');
+    });
+    cleaned = cleaned.replace(/[\u00A0\s]+/g, ' ').trim();
+
+    if (!cleaned) {
+        cleaned = raw.replace(/[\u00A0\s]+/g, ' ').trim();
+    }
+
+    return { badge, text: cleaned, instruction };
+}
+
+function isQuestionAnswered(q, ans) {
+    if (!ans) return false;
+    if (q.tipo === 'multi') {
+        return Array.isArray(ans) && ans.length > 0;
+    }
+    if (q.tipo === 'relacionar') {
+        return typeof ans === 'object' && Object.values(ans).some(v => v && v.trim() !== '');
+    }
+    return typeof ans === 'string' && ans.trim() !== '';
+}
+
+function isQuestionCorrect(q, ans) {
+    if (!isQuestionAnswered(q, ans)) return false;
+    const correct = q.respuestaCorrecta !== undefined ? q.respuestaCorrecta : q.correctAns;
+
+    if (q.tipo === 'relacionar') {
+        if (!q.pares || q.pares.length === 0) return false;
+        return q.pares.every((par, i) => ans[i] === par.match);
+    } else if (q.tipo === 'multi') {
+        const correctArr = Array.isArray(correct) ? correct : [];
+        return Array.isArray(ans) && ans.length === correctArr.length && ans.every(v => correctArr.includes(v));
+    } else {
+        return ans === correct;
+    }
+}
+
+function getAnsweredQuestionsCount() {
+    return selectedQuestions.filter(q => isQuestionAnswered(q, userAnswers[q.id])).length;
+}
 
 function initDB() {
     db = JSON.parse(JSON.stringify(preguntasTemario));
@@ -48,7 +127,8 @@ function initDB() {
     db.forEach(q => {
         if(edits[q.id]) {
             q.pregunta = edits[q.id].pregunta;
-            q.opciones = edits[q.id].opciones;
+            if (edits[q.id].opciones) q.opciones = edits[q.id].opciones;
+            if (edits[q.id].pares) q.pares = edits[q.id].pares;
             q.respuestaCorrecta = edits[q.id].respuestaCorrecta;
         }
     });
@@ -84,18 +164,19 @@ function initTheme() {
             document.getElementById('hide-letters').checked = e.target.checked;
         });
     }
+
+    // Auto-advance preference
+    const autoAdvToggle = document.getElementById('auto-advance-toggle');
+    if (autoAdvToggle) {
+        const savedAuto = localStorage.getItem('autoAdvance');
+        autoAdvToggle.checked = savedAuto === null ? true : savedAuto === 'true';
+        autoAdvToggle.addEventListener('change', (e) => {
+            localStorage.setItem('autoAdvance', e.target.checked);
+        });
+    }
 }
 
 function initDashboard() {
-    // Mobile menu
-    const btnMenu = document.getElementById('btn-menu');
-    const mainNav = document.getElementById('main-nav');
-    if (btnMenu && mainNav) {
-        btnMenu.addEventListener('click', () => {
-            mainNav.classList.toggle('open');
-        });
-    }
-
     const nameEl = document.getElementById('user-name');
     nameEl.textContent = localStorage.getItem('userName') || 'Estudiante';
     nameEl.addEventListener('blur', () => {
@@ -136,7 +217,7 @@ function renderCharts() {
         test.questions.forEach(q => {
             if(statsByTheme[q.tema]) {
                 statsByTheme[q.tema].total++;
-                if(q.userAns === q.correctAns) statsByTheme[q.tema].correct++;
+                if(isQuestionCorrect(q, q.userAns)) statsByTheme[q.tema].correct++;
             }
         });
     });
@@ -165,7 +246,6 @@ function loadThemes() {
     const themes = [...new Set(db.map(p => p.tema))];
     
     themes.forEach((tema, index) => {
-        // Para configurador de test
         const lbl = document.createElement('label');
         lbl.className = 'checkbox-label theme-item';
         lbl.innerHTML = `
@@ -174,7 +254,6 @@ function loadThemes() {
         `;
         container.appendChild(lbl);
 
-        // Para configurador de estudio
         const studyLbl = document.createElement('label');
         studyLbl.className = 'checkbox-label theme-item';
         studyLbl.innerHTML = `
@@ -207,6 +286,15 @@ function updateQuestionSlider() {
 }
 
 function setupEventListeners() {
+    // Mobile menu (registrado una única vez)
+    const btnMenu = document.getElementById('btn-menu');
+    const mainNav = document.getElementById('main-nav');
+    if (btnMenu && mainNav) {
+        btnMenu.addEventListener('click', () => {
+            mainNav.classList.toggle('open');
+        });
+    }
+
     if(navBtns.dashboard) navBtns.dashboard.addEventListener('click', () => { initDashboard(); switchScreen('dashboard'); });
     if(navBtns.config) navBtns.config.addEventListener('click', () => switchScreen('config'));
     if(navBtns.study) navBtns.study.addEventListener('click', () => switchScreen('studyConfig'));
@@ -245,6 +333,8 @@ function setupEventListeners() {
     document.getElementById('btn-prev').addEventListener('click', prevQuestion);
     document.getElementById('btn-next').addEventListener('click', nextQuestion);
     document.getElementById('btn-finish').addEventListener('click', finishTest);
+    const btnFinishTop = document.getElementById('btn-finish-top');
+    if (btnFinishTop) btnFinishTop.addEventListener('click', finishTest);
     
     document.getElementById('btn-home').addEventListener('click', () => { initDashboard(); switchScreen('dashboard'); });
     document.getElementById('btn-review').addEventListener('click', () => {
@@ -268,7 +358,7 @@ function setupEventListeners() {
     document.getElementById('btn-import-data').addEventListener('click', () => document.getElementById('file-import').click());
     document.getElementById('file-import').addEventListener('change', importData);
 
-    // DB Manager  // Study Mode Listeners
+    // Study Mode Listeners
     document.getElementById('btn-toggle-study-themes').addEventListener('click', () => {
         const checkboxes = document.querySelectorAll('.study-theme-checkbox');
         const allChecked = Array.from(checkboxes).every(c => c.checked);
@@ -276,11 +366,15 @@ function setupEventListeners() {
     });
     
     const studyOnlyFailed = document.getElementById('study-only-failed');
-    studyOnlyFailed.addEventListener('change', (e) => {
+    const syncStudyFailedUI = () => {
         const themesGroup = document.getElementById('study-themes-group');
-        themesGroup.style.opacity = e.target.checked ? '0.5' : '1';
-        themesGroup.style.pointerEvents = e.target.checked ? 'none' : 'auto';
-    });
+        if (themesGroup && studyOnlyFailed) {
+            themesGroup.style.opacity = studyOnlyFailed.checked ? '0.5' : '1';
+            themesGroup.style.pointerEvents = studyOnlyFailed.checked ? 'none' : 'auto';
+        }
+    };
+    studyOnlyFailed.addEventListener('change', syncStudyFailedUI);
+    syncStudyFailedUI();
 
     document.getElementById('btn-start-study').addEventListener('click', startStudyMode);
     document.getElementById('btn-study-finish').addEventListener('click', () => { initDashboard(); switchScreen('dashboard'); });
@@ -291,6 +385,33 @@ function setupEventListeners() {
         document.getElementById('edit-modal').classList.add('hidden');
     });
     document.getElementById('btn-save-edit').addEventListener('click', saveEdit);
+
+    // Atajos de teclado en modo tarjeta (1 a 1)
+    document.addEventListener('keydown', (e) => {
+        if (!screens.test || !screens.test.classList.contains('active') || isListMode) return;
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+
+        const key = e.key.toLowerCase();
+        const keyMap = { '1': 'a', '2': 'b', '3': 'c', '4': 'd', 'a': 'a', 'b': 'b', 'c': 'c', 'd': 'd' };
+        if (keyMap[key]) {
+            const q = selectedQuestions[currentQuestionIndex];
+            const letra = keyMap[key];
+            if (q && q.tipo !== 'relacionar' && q.opciones && q.opciones.some(o => o.letra === letra)) {
+                e.preventDefault();
+                window.selectOption(q.id, letra, q.tipo);
+            }
+        } else if (e.key === 'ArrowRight') {
+            if (currentQuestionIndex < selectedQuestions.length - 1) {
+                e.preventDefault();
+                nextQuestion();
+            }
+        } else if (e.key === 'ArrowLeft') {
+            if (currentQuestionIndex > 0) {
+                e.preventDefault();
+                prevQuestion();
+            }
+        }
+    });
 }
 
 function switchScreen(screenName) {
@@ -436,13 +557,20 @@ function startRepeatedTestById(id) {
     currentExamConfig = {
         date: new Date().getTime(),
         settings: `Repetición de examen | ${historyItem.questions.length} preg`,
-        questions: historyItem.questions.map(q => ({
-            id: q.id,
-            tema: q.tema,
-            pregunta: q.pregunta,
-            opciones: q.shuffledOpts,
-            respuestaCorrecta: q.correctAns
-        }))
+        questions: historyItem.questions.map(q => {
+            const orig = db.find(d => d.id === q.id) || {};
+            return {
+                id: q.id,
+                tema: q.tema,
+                tipo: q.tipo || orig.tipo || 'test',
+                pregunta: q.pregunta,
+                opciones: q.shuffledOpts || orig.opciones || [],
+                pares: q.pares || orig.pares || [],
+                distractores: q.distractores || orig.distractores || [],
+                imagen: q.imagen !== undefined ? q.imagen : (orig.imagen || null),
+                respuestaCorrecta: q.correctAns !== undefined ? q.correctAns : orig.respuestaCorrecta
+            };
+        })
     };
 
     selectedQuestions = currentExamConfig.questions;
@@ -458,6 +586,11 @@ function startRepeatedTestById(id) {
 function renderTest() {
     const container = document.getElementById('questions-container');
     container.innerHTML = '';
+
+    const autoAdvWrap = document.getElementById('auto-advance-wrap');
+    const kbHint = document.getElementById('keyboard-hint');
+    if (autoAdvWrap) autoAdvWrap.classList.toggle('hidden', isListMode);
+    if (kbHint) kbHint.classList.toggle('hidden', isListMode);
 
     if (isListMode) {
         updateProgress();
@@ -489,21 +622,21 @@ function updateProgress() {
     const counter = document.getElementById('question-counter');
     const bar = document.getElementById('progress-bar');
     const floating = document.getElementById('test-floating-progress');
+    const answeredCount = getAnsweredQuestionsCount();
 
     if (isListMode) {
-        const answeredCount = Object.keys(userAnswers).length;
         const pct = (answeredCount / selectedQuestions.length) * 100;
         
-        if (counter) counter.textContent = `${selectedQuestions.length} Preguntas`;
+        if (counter) counter.textContent = `Respondidas: ${answeredCount} de ${selectedQuestions.length}`;
         if (bar) bar.style.width = pct + '%';
         if (floating) {
             floating.textContent = `Respuestas: ${answeredCount} / ${selectedQuestions.length} (${Math.round(pct)}%)`;
             floating.classList.remove('hidden');
         }
     } else {
-        if (counter) counter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
+        if (counter) counter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length} · (${answeredCount} resp.)`;
         if (bar) {
-            const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
+            const pct = ((currentQuestionIndex + 1) / selectedQuestions.length) * 100;
             bar.style.width = pct + '%';
         }
         if (floating) {
@@ -516,10 +649,16 @@ function updateProgress() {
 function createQuestionCard(q, index, isReview, passedUserAns) {
     const card = document.createElement('div');
     card.className = 'question-card';
+    card.id = `q-card-${q.id}`;
     
-    const cleanPregunta = q.pregunta.replace(/[\u00A0\s]+/g, ' ').trim().replace(/^\d+\.\s*/, '');
-    let html = `<span class="question-topic">${q.tema}</span>`;
-    html += `<div class="question-text">${index + 1}. ${cleanPregunta}</div>`;
+    const parsed = parsePracticaQuestion(q);
+    let html = `
+        <div class="question-header-badges">
+            <span class="question-topic">${q.tema}</span>
+            <span class="question-type-badge">${parsed.badge}</span>
+        </div>
+    `;
+    html += `<div class="question-text"><span class="question-num-badge">${index + 1}.</span> ${parsed.text}</div>`;
     
     if (q.imagen) {
         html += `<div style="text-align:center; margin: 1rem 0;">
@@ -532,23 +671,24 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
     const ansToUse = isReview && passedUserAns !== undefined ? passedUserAns : userAnswers[q.id];
 
     if (q.tipo === 'relacionar') {
-        // q.pares = [{concepto: "X", match: "Y"}]
-        // ansToUse = { "0": "Y", "1": "Z" }
         html += `<div class="matching-container">`;
         
-        // Extraemos todas las posibles respuestas y las barajamos para el select
-        let allMatches = q.pares.map(p => p.match);
-        // Si no es review o es un examen nuevo, barajamos. En review usamos el guardado
-        let selectOptionsHtml = `<option value="">-- Selecciona --</option>`;
-        allMatches.sort().forEach(m => {
+        // Opciones únicas del desplegable (incluyendo distractores si es de 1 solo par)
+        const rawMatches = [
+            ...(q.pares || []).map(p => p.match),
+            ...(q.distractores || [])
+        ];
+        const allMatches = [...new Set(rawMatches)].sort();
+
+        let selectOptionsHtml = `<option value="">-- Selecciona una opción --</option>`;
+        allMatches.forEach(m => {
             selectOptionsHtml += `<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`;
         });
 
-        q.pares.forEach((par, i) => {
+        (q.pares || []).forEach((par, i) => {
             let disabled = isReview ? 'disabled' : '';
             let selectedVal = ansToUse && ansToUse[i] ? ansToUse[i] : '';
             
-            // Para colorear en review
             let selectClass = 'matching-select';
             if (isReview) {
                 if (selectedVal === par.match) {
@@ -558,33 +698,31 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
                 }
             }
 
+            const imgHtml = par.imagen ? `<img src="${par.imagen}" alt="${par.concepto}" />` : '';
+
             html += `
-                <div class="matching-row" style="display:flex; justify-content:space-between; margin-bottom: 0.5rem; align-items:center; gap: 1rem;">
-                    <div style="flex:1; font-weight: 500;">${par.concepto}</div>
-                    <div style="flex:1;">
+                <div class="matching-row">
+                    <div class="matching-concept">${imgHtml}<span>${par.concepto}</span></div>
+                    <div class="matching-select-wrap">
                         <select class="${selectClass}" id="match-${q.id}-${i}" onchange="selectMatchOption(${q.id}, ${i}, this.value)" ${disabled}>
                             ${selectOptionsHtml}
                         </select>
                     </div>
                 </div>
             `;
-            // Necesitamos inyectar el valor seleccionado después del render o hacerlo con replace.
-            // Una forma fácil es un script inline pequeño, pero mejor lo inyectamos manipulando el DOM luego, 
-            // o simplemente metiendo "selected" en la opción correcta.
         });
         
         if (isReview) {
-            html += `<div class="correct-matches-info" style="margin-top: 1rem; padding: 1rem; background: var(--surface); border: 1px solid var(--success); border-radius: 8px;">
-                <p style="color: var(--success); font-weight: bold; margin-bottom: 0.5rem;">Respuestas Correctas:</p>`;
-            q.pares.forEach(par => {
-                html += `<div style="font-size: 0.9rem;"><b>${par.concepto}</b> ➜ ${par.match}</div>`;
+            html += `<div class="correct-matches-info" style="margin-top: 0.75rem; padding: 1rem; background: var(--secondary); border: 1px solid var(--success); border-radius: 0.75rem;">
+                <p style="color: var(--success); font-weight: 700; margin-bottom: 0.5rem;">✔ Respuestas Correctas:</p>`;
+            (q.pares || []).forEach(par => {
+                html += `<div style="font-size: 0.92rem; margin-bottom: 0.25rem;"><b>${par.concepto}</b> ➜ ${par.match}</div>`;
             });
             html += `</div>`;
         }
 
         html += `</div>`;
     } else {
-        // test o vf
         const opts = q.opciones || q.shuffledOpts; 
         const correct = q.respuestaCorrecta || q.correctAns;
 
@@ -597,9 +735,8 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
                 let isCorrect = false;
                 
                 if (q.tipo === 'multi') {
-                    // correct is an array
-                    isCorrect = correct && correct.includes(opt.letra);
-                    isUserAns = ansToUse && ansToUse.includes(opt.letra);
+                    isCorrect = Array.isArray(correct) && correct.includes(opt.letra);
+                    isUserAns = Array.isArray(ansToUse) && ansToUse.includes(opt.letra);
                 } else {
                     isCorrect = correct === opt.letra;
                     isUserAns = ansToUse === opt.letra;
@@ -612,10 +749,17 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
                     btnClass += ' selected';
                 }
 
-                let prefix = (q.tipo === 'vf') ? '' : `<span class="option-letter">${opt.letra.toUpperCase()})</span> `;
+                let badgeContent = opt.letra.toUpperCase();
+                if (q.tipo === 'vf') {
+                    badgeContent = opt.texto.toLowerCase().startsWith('v') ? 'V' : 'F';
+                } else if (q.tipo === 'multi') {
+                    badgeContent = isUserAns || (isReview && isCorrect) ? '☑' : '☐';
+                }
+
                 const cleanTexto = opt.texto.replace(/[\u00A0\s]+/g, ' ').trim();
-                html += `<button class="${btnClass}" onclick="selectOption(${q.id}, '${opt.letra}', '${q.tipo}')" ${disabled}>
-                            ${prefix}${cleanTexto}
+                html += `<button class="${btnClass}" data-letra="${opt.letra}" data-tipo="${q.tipo}" onclick="selectOption(${q.id}, '${opt.letra}', '${q.tipo}')" ${disabled}>
+                            <span class="option-letter">${badgeContent}</span>
+                            <span class="option-text-content">${cleanTexto}</span>
                          </button>`;
             });
         }
@@ -624,16 +768,13 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
     html += `</div>`;
     card.innerHTML = html;
 
-    // Set selected values for dropdowns after creating DOM
     if (q.tipo === 'relacionar' && ansToUse) {
-        setTimeout(() => {
-            q.pares.forEach((par, i) => {
-                const select = card.querySelector(`#match-${q.id}-${i}`);
-                if (select && ansToUse[i]) {
-                    select.value = ansToUse[i];
-                }
-            });
-        }, 0);
+        (q.pares || []).forEach((par, i) => {
+            const select = card.querySelector(`#match-${q.id}-${i}`);
+            if (select && ansToUse[i]) {
+                select.value = ansToUse[i];
+            }
+        });
     }
 
     return card;
@@ -641,35 +782,83 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
 
 window.selectMatchOption = function(qId, pairIndex, value) {
     if (!userAnswers[qId]) userAnswers[qId] = {};
-    userAnswers[qId][pairIndex] = value;
-    // We don't renderTest() on every dropdown change to avoid losing focus.
+    if (!value) {
+        delete userAnswers[qId][pairIndex];
+        if (Object.keys(userAnswers[qId]).length === 0) {
+            delete userAnswers[qId];
+        }
+    } else {
+        userAnswers[qId][pairIndex] = value;
+    }
+    updateProgress();
 };
 
 window.selectOption = function(qId, letra, tipo) {
+    if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = null;
+    }
+
+    let wasDeselected = false;
+
     if (tipo === 'multi') {
-        if (!userAnswers[qId]) userAnswers[qId] = [];
+        if (!Array.isArray(userAnswers[qId])) userAnswers[qId] = [];
         const idx = userAnswers[qId].indexOf(letra);
         if (idx > -1) {
             userAnswers[qId].splice(idx, 1);
+            if (userAnswers[qId].length === 0) delete userAnswers[qId];
         } else {
             userAnswers[qId].push(letra);
         }
     } else {
-        userAnswers[qId] = letra;
+        if (userAnswers[qId] === letra) {
+            delete userAnswers[qId];
+            wasDeselected = true;
+        } else {
+            userAnswers[qId] = letra;
+        }
     }
-    renderTest(); 
+
+    // Actualizar únicamente la tarjeta afectada sin reconstruir toda la lista
+    const card = document.getElementById(`q-card-${qId}`);
+    if (card) {
+        card.querySelectorAll('.option-btn').forEach(btn => {
+            const bLetra = btn.dataset.letra;
+            const isSel = tipo === 'multi'
+                ? (Array.isArray(userAnswers[qId]) && userAnswers[qId].includes(bLetra))
+                : (userAnswers[qId] === bLetra);
+            btn.classList.toggle('selected', isSel);
+            if (tipo === 'multi') {
+                const letterSpan = btn.querySelector('.option-letter');
+                if (letterSpan) letterSpan.textContent = isSel ? '☑' : '☐';
+            }
+        });
+    }
+
+    updateProgress();
+
+    // Avance automático en preguntas de opción única / V-F cuando estamos en Modo Tarjeta (1 a 1)
+    const autoAdv = document.getElementById('auto-advance-toggle')?.checked;
+    if (!isListMode && tipo !== 'multi' && !wasDeselected && autoAdv && currentQuestionIndex < selectedQuestions.length - 1) {
+        autoAdvanceTimer = setTimeout(() => {
+            currentQuestionIndex++;
+            renderTest();
+        }, 240);
+    }
 };
 
 function prevQuestion() {
+    if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
     if (currentQuestionIndex > 0) { currentQuestionIndex--; renderTest(); }
 }
 
 function nextQuestion() {
+    if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
     if (currentQuestionIndex < selectedQuestions.length - 1) { currentQuestionIndex++; renderTest(); }
 }
 
 function finishTest() {
-    if (!confirm("¿Seguro que deseas finalizar el test?")) return;
+    if (!confirm("¿Seguro que deseas finalizar y corregir el test?")) return;
     
     let correct = 0;
     let incorrect = 0;
@@ -698,41 +887,19 @@ function finishTest() {
             pregunta: q.pregunta,
             shuffledOpts: q.opciones,
             pares: q.pares,
+            distractores: q.distractores,
+            imagen: q.imagen || null,
             correctAns: q.respuestaCorrecta,
             userAns: ans || null
         });
 
-        let isCorrect = false;
-        let isOmitted = false;
+        const answered = isQuestionAnswered(q, ans);
+        const right = isQuestionCorrect(q, ans);
 
-        if (!ans || (Array.isArray(ans) && ans.length === 0)) {
-            isOmitted = true;
-        } else {
-            if (q.tipo === 'relacionar') {
-                // Check if all pairs are answered correctly
-                let allPairsCorrect = true;
-                let anyAnswered = false;
-                q.pares.forEach((par, i) => {
-                    if (ans[i]) anyAnswered = true;
-                    if (ans[i] !== par.match) allPairsCorrect = false;
-                });
-                if (!anyAnswered) isOmitted = true;
-                else isCorrect = allPairsCorrect;
-            } else if (q.tipo === 'multi') {
-                // Check if arrays match exactly
-                const correctArr = q.respuestaCorrecta || [];
-                if (ans.length === correctArr.length && ans.every(v => correctArr.includes(v))) {
-                    isCorrect = true;
-                }
-            } else {
-                isCorrect = (ans === q.respuestaCorrecta);
-            }
-        }
-
-        if (isOmitted) {
+        if (!answered) {
             omitted++;
             reviewContainer.appendChild(createQuestionCard(q, idx, true));
-        } else if (isCorrect) {
+        } else if (right) {
             correct++;
             correctIds.push(q.id);
         } else {
@@ -834,7 +1001,13 @@ window.viewHistoryDetail = function(id) {
     document.getElementById('btn-repeat-exam').onclick = () => startRepeatedTestById(id);
 
     item.questions.forEach((q, idx) => {
-        container.appendChild(createQuestionCard(q, idx, true, q.userAns));
+        const orig = db.find(d => d.id === q.id) || {};
+        const enrichedQ = {
+            ...orig,
+            ...q,
+            imagen: q.imagen !== undefined ? q.imagen : orig.imagen
+        };
+        container.appendChild(createQuestionCard(enrichedQ, idx, true, q.userAns));
     });
 
     switchScreen('historyDetail');
@@ -880,9 +1053,10 @@ function startStudyMode() {
     renderStudyList();
 }
 
-function highlightDifferences(options, correctLetter) {
+function highlightDifferences(options, correctAns) {
     if (!options || options.length < 2) return options;
     
+    const isOptCorrect = (letra) => Array.isArray(correctAns) ? correctAns.includes(letra) : letra === correctAns;
     const tokenized = options.map(o => o.texto.split(/(\s+)/));
     const tokenCounts = {};
     const totalOpts = tokenized.length;
@@ -900,7 +1074,7 @@ function highlightDifferences(options, correctLetter) {
     };
 
     return options.map((opt, idx) => {
-        const isCorrect = (opt.letra === correctLetter);
+        const isCorrect = isOptCorrect(opt.letra);
         const tokens = tokenized[idx];
         
         const newTexto = tokens.map(t => {
@@ -944,8 +1118,14 @@ function renderStudyList() {
         card.className = 'question-card study-auto-reveal';
         card.style.border = '2px solid var(--accent)';
         
-        let html = `<span class="question-topic">${q.tema}</span>`;
-        html += `<div class="question-text">${index + 1}. ${q.pregunta.replace(/^\d+\.\s*/, '')}</div>`;
+        const parsed = parsePracticaQuestion(q);
+        let html = `
+            <div class="question-header-badges">
+                <span class="question-topic">${q.tema}</span>
+                <span class="question-type-badge">${parsed.badge}</span>
+            </div>
+        `;
+        html += `<div class="question-text"><span class="question-num-badge">${index + 1}.</span> ${parsed.text}</div>`;
         
         if (q.imagen) {
             html += `<div style="text-align:center; margin: 1rem 0;">
@@ -953,16 +1133,17 @@ function renderStudyList() {
                      </div>`;
         }
         
-        html += `<div class="options-container" id="study-options">`;
+        html += `<div class="options-container">`;
         
         if (q.tipo === 'relacionar') {
             html += `<div class="matching-container">`;
-            q.pares.forEach((par, i) => {
+            (q.pares || []).forEach((par) => {
+                const imgHtml = par.imagen ? `<img src="${par.imagen}" alt="${par.concepto}" />` : '';
                 html += `
-                    <div class="matching-row" style="display:flex; justify-content:space-between; margin-bottom: 0.5rem; align-items:center; gap: 1rem;">
-                        <div style="flex:1; font-weight: 500;">${par.concepto}</div>
-                        <div style="flex:1;">
-                            <div class="match-reveal-box" data-correct-match="${par.match.replace(/"/g, '&quot;')}" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: transparent; transition: all 0.5s ease; text-align: center;">
+                    <div class="matching-row">
+                        <div class="matching-concept">${imgHtml}<span>${par.concepto}</span></div>
+                        <div class="matching-select-wrap">
+                            <div class="match-reveal-box" data-correct-match="${par.match.replace(/"/g, '&quot;')}" style="padding: 0.65rem 0.9rem; border: 2px solid var(--border); border-radius: 0.6rem; background: var(--input-bg); color: transparent; font-weight: 600; transition: all 0.45s ease; text-align: center;">
                                 ${par.match}
                             </div>
                         </div>
@@ -979,14 +1160,21 @@ function renderStudyList() {
             opts.forEach(opt => {
                 let isCorrect = false;
                 if (q.tipo === 'multi') {
-                    isCorrect = correct && correct.includes(opt.letra);
-
+                    isCorrect = Array.isArray(correct) && correct.includes(opt.letra);
                 } else {
                     isCorrect = correct === opt.letra;
                 }
-                let prefix = (q.tipo === 'vf') ? '' : `<span class="option-letter">${opt.letra.toUpperCase()})</span> `;
+
+                let badgeContent = opt.letra.toUpperCase();
+                if (q.tipo === 'vf') {
+                    badgeContent = opt.texto.replace(/<[^>]+>/g, '').trim().toLowerCase().startsWith('v') ? 'V' : 'F';
+                } else if (q.tipo === 'multi') {
+                    badgeContent = isCorrect ? '☑' : '☐';
+                }
+
                 html += `<button class="option-btn" disabled data-is-correct="${isCorrect}">
-                            ${prefix}${opt.texto}
+                            <span class="option-letter">${badgeContent}</span>
+                            <span class="option-text-content">${opt.texto}</span>
                          </button>`;
             });
         }
@@ -996,41 +1184,37 @@ function renderStudyList() {
         container.appendChild(card);
     });
 
-    // Intersection Observer para revelar automáticamente
+    // Intersection Observer para revelar automáticamente todas las respuestas de la tarjeta
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                // Para V/F y Test
-                const correctBtn = entry.target.querySelector('.option-btn[data-is-correct="true"]');
-                if (correctBtn && !correctBtn.classList.contains('correct')) {
-                    correctBtn.classList.add('correct');
-                    correctBtn.style.transform = 'scale(1.02)';
-                    correctBtn.style.transition = 'all 0.5s ease';
-                    
+                const cardEl = entry.target;
+                if (cardEl.dataset.cardCounted !== 'true') {
+                    cardEl.dataset.cardCounted = 'true';
+
+                    // Para V/F, Test y Multi-respuesta (ilumina TODAS las correctas)
+                    const correctBtns = cardEl.querySelectorAll('.option-btn[data-is-correct="true"]');
+                    correctBtns.forEach(btn => {
+                        btn.classList.add('correct');
+                        btn.style.transform = 'scale(1.01)';
+                        btn.style.transition = 'all 0.4s ease';
+                    });
+
+                    // Para Relacionar
+                    const matchBoxes = cardEl.querySelectorAll('.match-reveal-box');
+                    matchBoxes.forEach(box => {
+                        box.style.color = 'var(--text-color)';
+                        box.style.borderColor = 'var(--success)';
+                        box.style.background = 'rgba(16, 185, 129, 0.14)';
+                    });
+
                     cardsViewed++;
                     if (floatingProgress) {
                         const pct = Math.round((cardsViewed / totalCards) * 100);
                         floatingProgress.textContent = `Vistas: ${cardsViewed} / ${totalCards} (${pct}%)`;
                     }
                 }
-                
-                // Para Relacionar
-                const matchBoxes = entry.target.querySelectorAll('.match-reveal-box');
-                matchBoxes.forEach(box => {
-                    box.style.color = 'var(--text)';
-                    box.style.borderColor = 'var(--success)';
-                    box.style.background = 'rgba(40, 167, 69, 0.1)';
-                    if (box.dataset.revealed !== 'true') {
-                        box.dataset.revealed = 'true';
-                        cardsViewed++;
-                        if (floatingProgress) {
-                            const pct = Math.round((cardsViewed / totalCards) * 100);
-                            floatingProgress.textContent = `Vistas: ${cardsViewed} / ${totalCards} (${pct}%)`;
-                        }
-                    }
-                });
-                
-                observer.unobserve(entry.target);
+                observer.unobserve(cardEl);
             }
         });
     }, {
@@ -1059,17 +1243,19 @@ function renderDBList() {
         div.className = 'db-item';
         let respText = "";
         if (q.tipo === 'relacionar') {
-            respText = "Relacionar (Pares Múltiples)";
+            respText = (q.pares || []).map(p => `${p.concepto} ➜ ${p.match}`).join(' | ');
         } else if (q.tipo === 'multi') {
             respText = (q.respuestaCorrecta || []).join(', ').toUpperCase();
         } else {
             respText = (q.respuestaCorrecta || '').toUpperCase();
         }
 
+        const parsed = parsePracticaQuestion(q);
+
         div.innerHTML = `
             <div class="db-item-text">
-                <div class="db-item-tema">${q.tema} <span style="font-size:0.7rem; background:var(--accent); padding:2px 6px; border-radius:4px; margin-left:5px;">${q.tipo}</span></div>
-                <div class="db-item-q">${q.pregunta}</div>
+                <div class="db-item-tema">${q.tema} <span style="font-size:0.7rem; background:var(--accent); color:#fff; padding:2px 6px; border-radius:4px; margin-left:5px;">${parsed.badge}</span></div>
+                <div class="db-item-q">${parsed.text}</div>
                 <div class="text-muted">Respuesta: ${respText}</div>
             </div>
             <button class="btn-secondary btn-sm" onclick="openEditModal(${q.id})">Editar</button>
@@ -1098,7 +1284,6 @@ window.openEditModal = function(id) {
     const optsContainer = document.getElementById('edit-q-options');
     optsContainer.innerHTML = '';
     
-    // Adapt DB Editor to question type
     if (q.tipo === 'relacionar') {
         correctInput.style.display = 'none';
         correctInput.previousElementSibling.style.display = 'none';
@@ -1117,10 +1302,12 @@ window.openEditModal = function(id) {
         correctInput.previousElementSibling.style.display = 'block';
         
         if (q.tipo === 'multi') {
+            correctInput.removeAttribute('maxlength');
             correctInput.value = (q.respuestaCorrecta || []).join(', ').toUpperCase();
             correctInput.placeholder = "Ej: A, C, D";
             correctInput.style.width = '150px';
         } else {
+            correctInput.setAttribute('maxlength', '1');
             correctInput.value = (q.respuestaCorrecta || '').toUpperCase();
             correctInput.style.width = '50px';
         }

@@ -6,8 +6,8 @@
     <title>Test Platform V2 - Temario 2026</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -133,6 +133,13 @@
                 </div>
                 <div class="test-meta">
                     <span id="question-counter">Pregunta 1 de 10</span>
+                    <div class="test-controls-inline">
+                        <label class="auto-advance-pill" id="auto-advance-wrap" title="Pasa automáticamente a la siguiente pregunta al elegir una opción">
+                            <input type="checkbox" id="auto-advance-toggle">
+                            <span>⚡ Avance auto</span>
+                        </label>
+                        <button id="btn-finish-top" class="btn-accent btn-sm">Finalizar Test</button>
+                    </div>
                 </div>
             </div>
 
@@ -141,10 +148,11 @@
             </div>
 
             <div class="test-footer">
-                <button id="btn-prev" class="btn-secondary hidden">Anterior</button>
-                <button id="btn-next" class="btn-primary hidden">Siguiente</button>
-                <button id="btn-finish" class="btn-accent hidden">Finalizar y Corregir</button>
+                <button id="btn-prev" class="btn-secondary hidden">⬅ Anterior</button>
+                <button id="btn-next" class="btn-primary hidden">Siguiente ➡</button>
+                <button id="btn-finish" class="btn-accent hidden">🏁 Finalizar y Corregir</button>
             </div>
+            <div id="keyboard-hint" class="keyboard-hint">💡 Atajos en PC: <b>A-D</b> o <b>1-4</b> para responder · <b>⬅ ➡</b> para navegar · Clic en la misma opción para dejar en blanco</div>
         </section>
 
         <!-- PANTALLA RESULTADOS -->
@@ -351,10 +359,10 @@
         document.getElementById('header-level-title').textContent = window.CURRENT_LEVEL;
         
         const dataScript = document.createElement('script');
-        dataScript.src = `datos_nivel${nivel}.js`;
+        dataScript.src = `datos_nivel${nivel}.js?v=5`;
         dataScript.onload = () => {
             const appScript = document.createElement('script');
-            appScript.src = 'app.js';
+            appScript.src = 'app.js?v=5';
             document.body.appendChild(appScript);
         };
         document.body.appendChild(dataScript);

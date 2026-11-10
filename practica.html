@@ -6,8 +6,8 @@
     <title>Test Práctica Office</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -133,6 +133,13 @@
                 </div>
                 <div class="test-meta">
                     <span id="question-counter">Pregunta 1 de 10</span>
+                    <div class="test-controls-inline">
+                        <label class="auto-advance-pill" id="auto-advance-wrap" title="Pasa automáticamente a la siguiente pregunta al elegir una opción de respuesta única">
+                            <input type="checkbox" id="auto-advance-toggle">
+                            <span>⚡ Avance auto</span>
+                        </label>
+                        <button id="btn-finish-top" class="btn-accent btn-sm">Finalizar Test</button>
+                    </div>
                 </div>
             </div>
 
@@ -141,10 +148,11 @@
             </div>
 
             <div class="test-footer">
-                <button id="btn-prev" class="btn-secondary hidden">Anterior</button>
-                <button id="btn-next" class="btn-primary hidden">Siguiente</button>
-                <button id="btn-finish" class="btn-accent hidden">Finalizar y Corregir</button>
+                <button id="btn-prev" class="btn-secondary hidden">⬅ Anterior</button>
+                <button id="btn-next" class="btn-primary hidden">Siguiente ➡</button>
+                <button id="btn-finish" class="btn-accent hidden">🏁 Finalizar y Corregir</button>
             </div>
+            <div id="keyboard-hint" class="keyboard-hint">💡 Atajos en PC: <b>A-D</b> o <b>1-4</b> para responder · <b>⬅ ➡</b> para navegar · Clic en la misma opción para dejar en blanco</div>
         </section>
 
         <!-- PANTALLA RESULTADOS -->
@@ -322,31 +330,6 @@
 
     </main>
 
-
-
-        <!-- PANTALLA EJECUCIÓN ESTUDIO -->
-        <section id="screen-study-run" class="screen">
-            <div class="test-header">
-                <div class="progress-bar-container">
-                    <div id="study-progress-bar" class="progress-bar" style="background: var(--accent);"></div>
-                </div>
-                <div class="test-meta">
-                    <span id="study-question-counter"></span>
-                </div>
-                <p class="text-muted" style="text-align: center; margin-top: 1rem; font-size: 0.85rem;">Las respuestas correctas se iluminarán automáticamente a medida que vayas haciendo scroll.</p>
-            </div>
-
-            <div id="study-questions-container">
-                <!-- Question injected via JS -->
-            </div>
-
-            <div class="test-footer" style="justify-content: flex-end;">
-                <button id="btn-study-finish" class="btn-secondary">Terminar Sesión</button>
-            </div>
-        </section>
-
-    </main>
-
     <!-- MODAL EDICIÓN PREGUNTA -->
     <div id="edit-modal" class="modal hidden">
         <div class="modal-content card">
@@ -368,15 +351,7 @@
     </div>
 
     <!-- Scripts -->
-    <script>
-        window.addEventListener('error', function(event) {
-            alert('JS Error: ' + event.message + '\nLine: ' + event.lineno + '\nFile: ' + event.filename);
-        });
-        window.addEventListener('unhandledrejection', function(event) {
-            alert('Promise Rejection: ' + event.reason);
-        });
-    </script>
-    <script src="datos_practica.js?v=2"></script>
-    <script src="app_practica.js?v=4"></script>
+    <script src="datos_practica.js?v=5"></script>
+    <script src="app_practica.js?v=5"></script>
 </body>
 </html>

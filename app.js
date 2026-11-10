@@ -7,6 +7,7 @@ let userAnswers = {};
 let isListMode = false;
 let currentExamConfig = null; 
 let currentEditId = null;
+let autoAdvanceTimer = null;
 
 // Study Mode Variables
 let studyQuestions = [];
@@ -33,6 +34,69 @@ const navBtns = {
     manager: document.getElementById('nav-manager'),
     sync: document.getElementById('nav-sync')
 };
+
+// Siglas y términos que deben mantenerse en mayúsculas o con capitalización propia al suavizar textos en MAYÚSCULAS
+const ACRONYMS = new Set([
+    'LGSS', 'INSS', 'TGSS', 'ISM', 'IT', 'AT', 'EP', 'IP', 'CE', 'BOE', 'RD', 'RDL',
+    'IRPF', 'IVA', 'FOGASA', 'SEPE', 'IMSERSO', 'INSHT', 'INSST', 'OIT', 'UE', 'DNI',
+    'NIE', 'RGSS', 'RETA', 'SOVI', 'CNAE', ' Pyme', 'PYME', 'PYMES', 'SMI', 'IPREM',
+    'ERE', 'ERTE', 'ET', 'LPRL', 'LISOS', 'LRJS', 'LEC', 'CC', 'CP', 'LOTC', 'LOPJ',
+    'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII',
+    'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'
+]);
+
+const PROPER_TERMS = {
+    'seguridad social': 'Seguridad Social',
+    'estado': 'Estado',
+    'ministerio': 'Ministerio',
+    'constitución española': 'Constitución Española',
+    'constitución': 'Constitución',
+    'gobierno': 'Gobierno',
+    'cortes generales': 'Cortes Generales',
+    'congreso de los diputados': 'Congreso de los Diputados',
+    'senado': 'Senado',
+    'tribunal constitucional': 'Tribunal Constitucional',
+    'tribunal supremo': 'Tribunal Supremo',
+    'administración pública': 'Administración Pública',
+    'administraciones públicas': 'Administraciones Públicas',
+    'estatuto de los trabajadores': 'Estatuto de los Trabajadores',
+    'ley general': 'Ley General'
+};
+
+function formatReadableQuestion(rawText) {
+    if (!rawText) return '';
+    let clean = rawText.replace(/[\u00A0\s]+/g, ' ').trim().replace(/^\d+\.\s*/, '');
+    
+    // Comprobar si la frase está mayoritariamente en MAYÚSCULAS
+    const lettersOnly = clean.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/g, '');
+    const upperCount = (lettersOnly.match(/[A-ZÁÉÍÓÚÜÑ]/g) || []).length;
+    const isAllCaps = lettersOnly.length > 10 && (upperCount / lettersOnly.length) > 0.8;
+
+    if (!isAllCaps) return clean;
+
+    // Convertir a minúsculas base
+    let lower = clean.toLowerCase();
+
+    // Restaurar siglas conocidas
+    lower = lower.replace(/\b([a-záéíóúüñ]+)\b/gi, (match) => {
+        const up = match.toUpperCase();
+        if (ACRONYMS.has(up)) return up;
+        return match;
+    });
+
+    // Restaurar nombres propios compuestos habituales
+    Object.keys(PROPER_TERMS).forEach(term => {
+        const regex = new RegExp(`\\b${term}\\b`, 'gi');
+        lower = lower.replace(regex, PROPER_TERMS[term]);
+    });
+
+    // Capitalizar inicio de frase y después de puntuación (., ?, !, ¿, ¡)
+    lower = lower.replace(/(^\s*[¿¡"]?\s*[a-záéíóúüñ])|([.?!]\s+[¿¡"]?\s*[a-záéíóúüñ])/g, (match) => {
+        return match.toUpperCase();
+    });
+
+    return lower;
+}
 
 function initApp() {
     initDB();
@@ -99,6 +163,16 @@ function initTheme() {
             localStorage.setItem('hideLetters', e.target.checked);
             document.body.classList.toggle('hide-letters', e.target.checked);
             document.getElementById('hide-letters').checked = e.target.checked;
+        });
+    }
+
+    // Auto-advance preference (activado por defecto para hacer los tests más fluidos)
+    const autoAdvToggle = document.getElementById('auto-advance-toggle');
+    if (autoAdvToggle) {
+        const savedAuto = localStorage.getItem('autoAdvance');
+        autoAdvToggle.checked = savedAuto === null ? true : savedAuto === 'true';
+        autoAdvToggle.addEventListener('change', (e) => {
+            localStorage.setItem('autoAdvance', e.target.checked);
         });
     }
 }
@@ -253,6 +327,8 @@ function setupEventListeners() {
     document.getElementById('btn-prev').addEventListener('click', prevQuestion);
     document.getElementById('btn-next').addEventListener('click', nextQuestion);
     document.getElementById('btn-finish').addEventListener('click', finishTest);
+    const btnFinishTop = document.getElementById('btn-finish-top');
+    if (btnFinishTop) btnFinishTop.addEventListener('click', finishTest);
     
     document.getElementById('btn-home').addEventListener('click', () => { initDashboard(); switchScreen('dashboard'); });
     document.getElementById('btn-review').addEventListener('click', () => {
@@ -279,11 +355,15 @@ function setupEventListeners() {
     });
     
     const studyOnlyFailed = document.getElementById('study-only-failed');
-    studyOnlyFailed.addEventListener('change', (e) => {
+    const syncStudyFailedUI = () => {
         const themesGroup = document.getElementById('study-themes-group');
-        themesGroup.style.opacity = e.target.checked ? '0.5' : '1';
-        themesGroup.style.pointerEvents = e.target.checked ? 'none' : 'auto';
-    });
+        if (themesGroup && studyOnlyFailed) {
+            themesGroup.style.opacity = studyOnlyFailed.checked ? '0.5' : '1';
+            themesGroup.style.pointerEvents = studyOnlyFailed.checked ? 'none' : 'auto';
+        }
+    };
+    studyOnlyFailed.addEventListener('change', syncStudyFailedUI);
+    syncStudyFailedUI();
 
     document.getElementById('btn-start-study').addEventListener('click', startStudyMode);
     document.getElementById('btn-study-finish').addEventListener('click', () => { initDashboard(); switchScreen('dashboard'); });
@@ -299,6 +379,33 @@ function setupEventListeners() {
         document.getElementById('edit-modal').classList.add('hidden');
     });
     document.getElementById('btn-save-edit').addEventListener('click', saveEdit);
+
+    // Atajos de teclado en modo tarjeta (1 a 1)
+    document.addEventListener('keydown', (e) => {
+        if (!screens.test || !screens.test.classList.contains('active') || isListMode) return;
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+
+        const key = e.key.toLowerCase();
+        const keyMap = { '1': 'a', '2': 'b', '3': 'c', '4': 'd', 'a': 'a', 'b': 'b', 'c': 'c', 'd': 'd' };
+        if (keyMap[key]) {
+            const q = selectedQuestions[currentQuestionIndex];
+            const letra = keyMap[key];
+            if (q && q.opciones && q.opciones.some(o => o.letra === letra)) {
+                e.preventDefault();
+                window.selectOption(q.id, letra);
+            }
+        } else if (e.key === 'ArrowRight') {
+            if (currentQuestionIndex < selectedQuestions.length - 1) {
+                e.preventDefault();
+                nextQuestion();
+            }
+        } else if (e.key === 'ArrowLeft') {
+            if (currentQuestionIndex > 0) {
+                e.preventDefault();
+                prevQuestion();
+            }
+        }
+    });
 }
 
 function switchScreen(screenName) {
@@ -445,6 +552,11 @@ function renderTest() {
     const container = document.getElementById('questions-container');
     container.innerHTML = '';
 
+    const autoAdvWrap = document.getElementById('auto-advance-wrap');
+    const kbHint = document.getElementById('keyboard-hint');
+    if (autoAdvWrap) autoAdvWrap.classList.toggle('hidden', isListMode);
+    if (kbHint) kbHint.classList.toggle('hidden', isListMode);
+
     if (isListMode) {
         updateProgress();
         
@@ -475,21 +587,21 @@ function updateProgress() {
     const counter = document.getElementById('question-counter');
     const bar = document.getElementById('progress-bar');
     const floating = document.getElementById('test-floating-progress');
+    const answeredCount = Object.keys(userAnswers).length;
 
     if (isListMode) {
-        const answeredCount = Object.keys(userAnswers).length;
         const pct = (answeredCount / selectedQuestions.length) * 100;
         
-        if (counter) counter.textContent = `${selectedQuestions.length} Preguntas`;
+        if (counter) counter.textContent = `Respondidas: ${answeredCount} de ${selectedQuestions.length}`;
         if (bar) bar.style.width = pct + '%';
         if (floating) {
             floating.textContent = `Respuestas: ${answeredCount} / ${selectedQuestions.length} (${Math.round(pct)}%)`;
             floating.classList.remove('hidden');
         }
     } else {
-        if (counter) counter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length}`;
+        if (counter) counter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${selectedQuestions.length} · (${answeredCount} resp.)`;
         if (bar) {
-            const pct = ((currentQuestionIndex) / selectedQuestions.length) * 100;
+            const pct = ((currentQuestionIndex + 1) / selectedQuestions.length) * 100;
             bar.style.width = pct + '%';
         }
         if (floating) {
@@ -502,10 +614,15 @@ function updateProgress() {
 function createQuestionCard(q, index, isReview, passedUserAns) {
     const card = document.createElement('div');
     card.className = 'question-card';
+    card.id = `q-card-${q.id}`;
     
-    const cleanPregunta = q.pregunta.replace(/[\u00A0\s]+/g, ' ').trim().replace(/^\d+\.\s*/, '');
-    let html = `<span class="question-topic">${q.tema}</span>`;
-    html += `<div class="question-text">${index + 1}. ${cleanPregunta}</div>`;
+    const cleanPregunta = formatReadableQuestion(q.pregunta);
+    let html = `
+        <div class="question-header-badges">
+            <span class="question-topic">${q.tema}</span>
+        </div>
+    `;
+    html += `<div class="question-text"><span class="question-num-badge">${index + 1}.</span> ${cleanPregunta}</div>`;
     html += `<div class="options-container">`;
     
     const ansToUse = isReview && passedUserAns !== undefined ? passedUserAns : userAnswers[q.id];
@@ -527,8 +644,9 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
         }
 
         const cleanTexto = opt.texto.replace(/[\u00A0\s]+/g, ' ').trim();
-        html += `<button class="${btnClass}" onclick="selectOption(${q.id}, '${opt.letra}')" ${disabled}>
-                    <span class="option-letter">${opt.letra.toUpperCase()})</span> ${cleanTexto}
+        html += `<button class="${btnClass}" data-letra="${opt.letra}" onclick="selectOption(${q.id}, '${opt.letra}')" ${disabled}>
+                    <span class="option-letter">${opt.letra.toUpperCase()}</span>
+                    <span class="option-text-content">${cleanTexto}</span>
                  </button>`;
     });
     
@@ -538,20 +656,49 @@ function createQuestionCard(q, index, isReview, passedUserAns) {
 }
 
 window.selectOption = function(qId, letra) {
-    userAnswers[qId] = letra;
-    renderTest(); 
+    if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = null;
+    }
+
+    const wasSelected = userAnswers[qId] === letra;
+    if (wasSelected) {
+        delete userAnswers[qId]; // Permite dejar la pregunta en blanco si se vuelve a pulsar
+    } else {
+        userAnswers[qId] = letra;
+    }
+
+    // Actualizamos solo los botones de la tarjeta actual sin destruir el DOM ni perder el scroll
+    const card = document.getElementById(`q-card-${qId}`);
+    if (card) {
+        card.querySelectorAll('.option-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.letra === userAnswers[qId]);
+        });
+    }
+    updateProgress();
+
+    // Si estamos en modo tarjeta (1 a 1) y el avance automático está activo, pasamos a la siguiente
+    const autoAdv = document.getElementById('auto-advance-toggle')?.checked;
+    if (!isListMode && !wasSelected && autoAdv && currentQuestionIndex < selectedQuestions.length - 1) {
+        autoAdvanceTimer = setTimeout(() => {
+            currentQuestionIndex++;
+            renderTest();
+        }, 240);
+    }
 };
 
 function prevQuestion() {
+    if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
     if (currentQuestionIndex > 0) { currentQuestionIndex--; renderTest(); }
 }
 
 function nextQuestion() {
+    if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
     if (currentQuestionIndex < selectedQuestions.length - 1) { currentQuestionIndex++; renderTest(); }
 }
 
 function finishTest() {
-    if (!confirm("¿Seguro que deseas finalizar el test?")) return;
+    if (!confirm("¿Seguro que deseas finalizar y corregir el test?")) return;
     
     let correct = 0;
     let incorrect = 0;
@@ -754,7 +901,6 @@ function highlightDifferences(options, correctLetter) {
         if (opt.letra === correctLetter) {
             const highlighted = words.map(w => {
                 const nw = normalize(w);
-                // Evitamos resaltar conectores básicos de 1 letra
                 const missingInSomeTrap = incorrectSets.some(set => !set.has(nw));
                 if (missingInSomeTrap && nw.length > 1) {
                     return `<span class="nemo-correct">${w}</span>`;
@@ -793,10 +939,14 @@ function renderStudyList() {
         card.className = 'question-card study-auto-reveal';
         card.style.border = '2px solid var(--accent)';
         
-        const cleanPregunta = q.pregunta.replace(/[\u00A0\s]+/g, ' ').trim().replace(/^\d+\.\s*/, '');
-        let html = `<span class="question-topic">${q.tema}</span>`;
-        html += `<div class="question-text">${index + 1}. ${cleanPregunta}</div>`;
-        html += `<div class="options-container" id="study-options">`;
+        const cleanPregunta = formatReadableQuestion(q.pregunta);
+        let html = `
+            <div class="question-header-badges">
+                <span class="question-topic">${q.tema}</span>
+            </div>
+        `;
+        html += `<div class="question-text"><span class="question-num-badge">${index + 1}.</span> ${cleanPregunta}</div>`;
+        html += `<div class="options-container">`;
         
         let opts = q.opciones || q.shuffledOpts;
         const correct = q.respuestaCorrecta || q.correctAns;
@@ -806,7 +956,8 @@ function renderStudyList() {
         opts.forEach(opt => {
             const isCorrect = correct === opt.letra;
             html += `<button class="option-btn" disabled data-is-correct="${isCorrect}">
-                        <span class="option-letter">${opt.letra.toUpperCase()})</span> ${opt.texto}
+                        <span class="option-letter">${opt.letra.toUpperCase()}</span>
+                        <span class="option-text-content">${opt.texto}</span>
                      </button>`;
         });
         html += `</div>`;
@@ -820,8 +971,8 @@ function renderStudyList() {
                 const correctBtn = entry.target.querySelector('.option-btn[data-is-correct="true"]');
                 if (correctBtn && !correctBtn.classList.contains('correct')) {
                     correctBtn.classList.add('correct');
-                    correctBtn.style.transform = 'scale(1.02)';
-                    correctBtn.style.transition = 'all 0.5s ease';
+                    correctBtn.style.transform = 'scale(1.01)';
+                    correctBtn.style.transition = 'all 0.4s ease';
                     
                     cardsViewed++;
                     const pct = Math.round((cardsViewed / totalCards) * 100);
@@ -857,7 +1008,7 @@ function renderDBList() {
         div.innerHTML = `
             <div class="db-item-text">
                 <div class="db-item-tema">${q.tema}</div>
-                <div class="db-item-q">${q.pregunta}</div>
+                <div class="db-item-q">${formatReadableQuestion(q.pregunta)}</div>
                 <div class="text-muted">Respuesta: ${q.respuestaCorrecta.toUpperCase()}</div>
             </div>
             <button class="btn-secondary btn-sm" onclick="openEditModal(${q.id})">Editar</button>
@@ -935,6 +1086,7 @@ function saveEdit() {
 function exportData() {
     const data = {
         type: 'teoria',
+        levelPrefix: storagePrefix,
         t_testHistory: localStorage.getItem(storagePrefix + 'testHistory') || '[]',
         t_failedQuestions: localStorage.getItem(storagePrefix + 'failedQuestions') || '[]',
         t_userName: localStorage.getItem('userName') || 'Estudiante',
@@ -946,7 +1098,8 @@ function exportData() {
     const a = document.createElement('a');
     a.href = url;
     const dateStr = new Date().toISOString().split('T')[0];
-    a.download = `progreso_teoria_${dateStr}.json`;
+    const cleanLevel = storagePrefix.replace('_', '');
+    a.download = `progreso_teoria_${cleanLevel}_${dateStr}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -965,6 +1118,10 @@ function importData(event) {
                 alert("Error: Este archivo no parece ser un respaldo válido de la parte Teórica.");
                 return;
             }
+            if (data.levelPrefix && data.levelPrefix !== storagePrefix) {
+                alert(`Atención: Este archivo pertenece al nivel (${data.levelPrefix.replace('_','')}), pero estás en (${storagePrefix.replace('_','')}). Entra en el nivel correspondiente antes de importarlo.`);
+                return;
+            }
             
             if (confirm("¡Atención! Esto sobreescribirá todo tu progreso actual de Teoría en este dispositivo con los datos del archivo. ¿Estás seguro?")) {
                 localStorage.setItem(storagePrefix + 'testHistory', data.t_testHistory);
@@ -977,7 +1134,6 @@ function importData(event) {
         } catch (err) {
             alert("Error leyendo el archivo: " + err.message);
         }
-        // Reset file input so the same file can be selected again if needed
         document.getElementById('file-import').value = '';
     };
     reader.readAsText(file);

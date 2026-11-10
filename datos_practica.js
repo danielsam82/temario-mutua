@@ -256,7 +256,7 @@ const preguntasTemario = [
         "id": 12,
         "tema": "Word",
         "tipo": "relacionar",
-        "pregunta": "Relaciona cada herramienta con la pestaña en la que se ubica.\nEn cada desplegable, elige la opción que consideres correcta.\nColor de página",
+        "pregunta": "Relaciona cada herramienta con la pestaña en la que se ubica.\nEn cada desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
@@ -524,7 +524,7 @@ const preguntasTemario = [
         "id": 24,
         "tema": "Word",
         "tipo": "relacionar",
-        "pregunta": "Relaciona cada herramienta con la pestaña en la que se ubica.\nEn cada desplegable, elige la opción que consideres correcta.\nTabla",
+        "pregunta": "Relaciona cada herramienta con la pestaña en la que se ubica.\nEn cada desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
@@ -693,7 +693,7 @@ const preguntasTemario = [
         "id": 31,
         "tema": "Word",
         "tipo": "relacionar",
-        "pregunta": "Relaciona cada herramienta con la pestaña en la que se ubica.\nEn cada desplegable, elige la opción que consideres correcta.\nCuadro de texto",
+        "pregunta": "Relaciona cada herramienta con la pestaña en la que se ubica.\nEn cada desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
@@ -1622,7 +1622,7 @@ const preguntasTemario = [
         "id": 72,
         "tema": "Excel",
         "tipo": "relacionar",
-        "pregunta": "Relaciona cada descripción con su elemento correspondiente de una pantalla de Excel.\nEn cada desplegable, elige la opción que consideres correcta.\nEstá compuesta por una serie de pestañas donde se organizan",
+        "pregunta": "Relaciona cada descripción con su elemento correspondiente de una pantalla de Excel.\nEn cada desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
@@ -1634,7 +1634,7 @@ const preguntasTemario = [
                 "match": "Barra de fórmulas"
             },
             {
-                "concepto": "aparecen las opciones: “Guardar” “Deshacer” y “Rehacer”.",
+                "concepto": "Muestra los comandos que se utilizan con más frecuencia. Por defecto, aparecen las opciones: “Guardar”, “Deshacer” y “Rehacer”.",
                 "match": "Herramientas de acceso rápido"
             },
             {
@@ -1864,7 +1864,7 @@ const preguntasTemario = [
         "id": 82,
         "tema": "Excel",
         "tipo": "relacionar",
-        "pregunta": "Relaciona cada descripción con su vista correspondiente.\nEn cada desplegable, elige la opción que consideres correcta.\nEsta vista es especialmente útil para ver cómo afectan algunos",
+        "pregunta": "Relaciona cada descripción con su vista correspondiente.\nEn cada desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
@@ -1872,16 +1872,16 @@ const preguntasTemario = [
                 "match": "Vista previa de salto de página"
             },
             {
-                "concepto": "establecer márgenes para la impresión. Resulta muy eficaz antes de imprimir nuestro trabajo.",
+                "concepto": "En esta vista se pueden usar reglas para medir el ancho y alto de los datos, cambiar la orientación de la página, agregar o cambiar encabezados y pies de página, y establecer márgenes para la impresión. Resulta muy eficaz antes de imprimir nuestro trabajo.",
                 "match": "Vista diseño de página"
             },
             {
-                "concepto": "de manera que podamos aplicarla rápidamente cuando sea necesario.",
+                "concepto": "Con ella podemos guardar la configuración específica de una hoja de cálculo, de manera que podamos aplicarla rápidamente cuando sea necesario.",
                 "match": "Vistas personalizadas"
             },
             {
                 "concepto": "Es la que está activa por defecto cuando abrimos un libro.",
-                "match": "Vista normal Vista previa de salto de página Vista diseño de página Vistas personalizadas Vista normal "
+                "match": "Vista normal"
             }
         ],
         "respuestaCorrecta": "",
@@ -1952,7 +1952,7 @@ const preguntasTemario = [
         "id": 86,
         "tema": "Excel",
         "tipo": "relacionar",
-        "pregunta": "Relaciona cada descripción con su elemento correspondiente de un gráfico.\nEn cada desplegable, elige la opción que consideres correcta.\nEs la representación gráfica de un dato.",
+        "pregunta": "Relaciona cada descripción con su elemento correspondiente de un gráfico.\nEn cada desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
@@ -1969,7 +1969,7 @@ const preguntasTemario = [
             },
             {
                 "concepto": "Zona en la que aparecen representados los datos.",
-                "match": "Área de trazado Marcador de datos Etiqueta Ejes Área de trazado "
+                "match": "Área de trazado"
             }
         ],
         "respuestaCorrecta": "",
@@ -2229,11 +2229,11 @@ const preguntasTemario = [
         "id": 99,
         "tema": "Excel",
         "tipo": "relacionar",
-        "pregunta": "Relaciona cada funcionalidad con su función o funciones correspondientes.\nEn cada desplegable, elige la opción que consideres correcta.\nActúan sobre un texto, que toman como único parámetro, y",
+        "pregunta": "Relaciona cada funcionalidad con su función o funciones correspondientes.\nEn cada desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
-                "concepto": "y devuelven ese mismo texto con la conversión realizada.",
+                "concepto": "Actúan sobre un texto, que toman como único parámetro, y devuelven ese mismo texto con la conversión realizada.",
                 "match": "MAYUSC"
             },
             {
@@ -3089,16 +3089,21 @@ const preguntasTemario = [
         "id": 137,
         "tema": "PowerPoint",
         "tipo": "relacionar",
-        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.\nPara abrir una presentación ya existente tendremos que utilizar la ficha",
+        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
-                "concepto": "Para abrir una presentación ya existente tendremos que utilizar la ficha",
+                "concepto": "Para abrir una presentación ya existente tendremos que utilizar la ficha:",
                 "match": "“Archivo”"
             }
         ],
         "respuestaCorrecta": "",
-        "imagen": null
+        "imagen": null,
+        "distractores": [
+            "“Inicio”",
+            "“Insertar”",
+            "“Diseño”"
+        ]
     },
     {
         "id": 138,
@@ -3123,16 +3128,21 @@ const preguntasTemario = [
         "id": 139,
         "tema": "PowerPoint",
         "tipo": "relacionar",
-        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.\nSi deseamos cambiar las funciones y comandos que por defecto muestra PowerPoint, deberemos",
+        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
-                "concepto": "acceder a la pestaña “Archivo” y presionar sobre",
+                "concepto": "Si deseamos cambiar las funciones y comandos que por defecto muestra PowerPoint, deberemos acceder a la pestaña “Archivo” y presionar sobre:",
                 "match": "“Opciones”"
             }
         ],
         "respuestaCorrecta": "",
-        "imagen": null
+        "imagen": null,
+        "distractores": [
+            "“Información”",
+            "“Cuenta”",
+            "“Guardar como”"
+        ]
     },
     {
         "id": 140,
@@ -3176,16 +3186,21 @@ const preguntasTemario = [
         "id": 142,
         "tema": "PowerPoint",
         "tipo": "relacionar",
-        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.\nPara establecer un enlace con una página web usaremos la herramienta",
+        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
-                "concepto": "Para establecer un enlace con una página web usaremos la herramienta",
+                "concepto": "Para establecer un enlace con una página web usaremos la herramienta:",
                 "match": "Vínculo"
             }
         ],
         "respuestaCorrecta": "",
-        "imagen": null
+        "imagen": null,
+        "distractores": [
+            "SmartArt",
+            "Acción",
+            "Marcador"
+        ]
     },
     {
         "id": 143,
@@ -3306,20 +3321,23 @@ const preguntasTemario = [
         "opciones": [],
         "pares": [
             {
-                "concepto": "",
+                "concepto": "Icono Pincel",
+                "imagen": "media/img_p84_1.png",
                 "match": "Estilo / color"
             },
             {
-                "concepto": "",
+                "concepto": "Icono Cruz (+)",
+                "imagen": "media/img_p84_2.png",
                 "match": "Elementos del gráfico"
             },
             {
-                "concepto": "",
+                "concepto": "Icono Embudo",
+                "imagen": "media/img_p84_3.png",
                 "match": "Valores y nombres"
             }
         ],
         "respuestaCorrecta": "",
-        "imagen": "media/img_p84_1.png"
+        "imagen": null
     },
     {
         "id": 149,
@@ -3363,31 +3381,41 @@ const preguntasTemario = [
         "id": 151,
         "tema": "PowerPoint",
         "tipo": "relacionar",
-        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.\nLas presentaciones personalizadas se realizan desde la pestaña",
+        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
-                "concepto": "Las presentaciones personalizadas se realizan desde la pestaña",
+                "concepto": "Las presentaciones personalizadas se realizan desde la pestaña:",
                 "match": "“Presentación con diapositivas”"
             }
         ],
         "respuestaCorrecta": "",
-        "imagen": null
+        "imagen": null,
+        "distractores": [
+            "“Vista”",
+            "“Transiciones”",
+            "“Animaciones”"
+        ]
     },
     {
         "id": 152,
         "tema": "PowerPoint",
         "tipo": "relacionar",
-        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.\nPara establecer un hipervínculo podemos hacerlo eligiendo de los sitios web visitados últimamente",
+        "pregunta": "Completa la siguiente afirmación.\nEn el desplegable, elige la opción que consideres correcta.",
         "opciones": [],
         "pares": [
             {
-                "concepto": "tecleando la URL deseada en el apartado",
+                "concepto": "Para establecer un hipervínculo podemos hacerlo eligiendo de los sitios web visitados últimamente o tecleando la URL deseada en el apartado:",
                 "match": "“Dirección”"
             }
         ],
         "respuestaCorrecta": "",
-        "imagen": null
+        "imagen": null,
+        "distractores": [
+            "“Texto para mostrar”",
+            "“Subdirección”",
+            "“Destino”"
+        ]
     },
     {
         "id": 153,
